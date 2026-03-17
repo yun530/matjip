@@ -1,0 +1,110 @@
+:root {
+  /* Crayon/Pastel Colors */
+  --primary: #FF6B6B; /* Soft red for primary actions */
+  --primary-hover: #FA5252;
+  --secondary: #4DABF7; /* Sky blue */
+  --accent: #FCC419; /* Crayon yellow */
+  
+  /* Neutral Colors */
+  --white: #FFFFFF;
+  --paper: #FFFDF7; /* Warm paper background */
+  --gray-50: #F1F3F5;
+  --gray-100: #E9ECEF;
+  --gray-200: #DEE2E6;
+  --gray-400: #CED4DA;
+  --gray-600: #868E96;
+  --gray-800: #343A40;
+  --black: #2A2A2A; /* Softer sketch black */
+
+  /* UI Pin Logic Colors */
+  --pin-red: #FA5252;
+  --pin-yellow: #FCC419;
+  --pin-blue: #4DABF7;
+
+  /* Layout & Doodle Constants */
+  --max-width: 1200px;
+  --header-height: 70px;
+  --border-width: 3px;
+  --doodle-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
+  --doodle-shadow: 4px 4px 0px var(--black);
+  
+  /* Default */
+  --background: var(--paper);
+  --foreground: var(--black);
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  letter-spacing: 0.5px;
+}
+
+body {
+  line-height: 1.6;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+ul {
+  list-style: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+}
+
+/* Doodle Style Utility Classes */
+.doodle-box {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--black);
+  border-radius: var(--doodle-radius);
+  box-shadow: var(--doodle-shadow);
+  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1.2), box-shadow 0.2s;
+}
+
+.doodle-btn {
+  background-color: var(--white);
+  border: var(--border-width) solid var(--black);
+  border-radius: var(--doodle-radius);
+  box-shadow: 3px 3px 0px var(--black);
+  transition: all 0.15s ease;
+  font-weight: bold;
+  font-size: 1.1rem;
+  padding: 8px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.doodle-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0px var(--black);
+}
+
+.doodle-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px var(--black);
+}
+
+/* Common Layout Classes */
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  padding: 0 20px;
+}
