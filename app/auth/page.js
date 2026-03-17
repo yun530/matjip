@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getLocalUser, createUser, getUserByInviteCode, createMutualFollow } from "@/lib/userAuth";
+import Logo from "../components/Logo";
 
 function AuthPageInner() {
   const router = useRouter();
@@ -43,7 +44,7 @@ function AuthPageInner() {
   return (
     <div className="wrap">
       <div className="card-box">
-        <div className="logo">🗺️</div>
+        <Logo size={120} />
         <h1 className="title">쩝쩝박사지도</h1>
         <p className="subtitle">아는 사람 추천만 믿는 맛집 지도</p>
 
@@ -162,7 +163,7 @@ function AuthPageInner() {
           border: 1.5px solid var(--border-color);
           border-radius: 10px;
           font-size: 15px;
-          font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+          font-family: 'Gaegu', cursive;
           color: var(--text);
           outline: none;
           background: var(--bg);
@@ -179,7 +180,7 @@ function AuthPageInner() {
           border-radius: 12px;
           font-size: 15px;
           font-weight: 700;
-          font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+          font-family: 'Gaegu', cursive;
           cursor: pointer;
           transition: opacity 0.1s;
         }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { getLocalUser, getFollowingUsers } from "@/lib/userAuth";
 
 const AVATAR_COLORS = ["#FFD600", "#FF6B35", "#4ECDC4", "#A8E6CF", "#FFB7B2", "#C7CEEA", "#FFEAA7", "#DDA0DD"];
@@ -14,6 +15,7 @@ function getAvatarColor(str) {
 const RATING_LABELS = { 1: "별로", 2: "그냥그래", 3: "괜찮아", 4: "맛있어", 5: "최고야!" };
 
 export default function ProfilePage() {
+  const router = useRouter();
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
   const [myPlaces, setMyPlaces] = useState([]);
@@ -75,7 +77,7 @@ export default function ProfilePage() {
       {/* 프로필 헤더 */}
       <div className="profile-header">
         <div className="avatar" style={{ background: getAvatarColor(user.id) }}>
-          {user.nickname[0]}
+          {user.nickname.slice(-2)}
         </div>
         <div className="profile-info">
           <div className="username">{user.nickname}</div>
@@ -115,21 +117,18 @@ export default function ProfilePage() {
         ) : (
           <div className="places-list">
             {myPlaces.map((p) => (
-              <div key={p.id} className="place-card card">
-                <div className="place-top">
-                  <div className="place-name">{p.restaurant_name}</div>
+              <div key={p.id} className="place-card card" onClick={() => router.push(`/map?friend=${user.id}`)} style={{ cursor: "pointer" }}>
+                <div className="card-top">
+                  <span className="place-name-badge">{user.nickname}</span>
                   {p.rating && (
                     <span className="place-rating">
                       {"★".repeat(p.rating)}{"☆".repeat(5 - p.rating)}
                     </span>
                   )}
                 </div>
-                {p.menu && <div className="place-menu">{p.menu}</div>}
+                <div className="place-name">{p.restaurant_name}</div>
                 {p.comment && <div className="place-comment">"{p.comment}"</div>}
-                {p.address && <div className="place-addr">📍 {p.address}</div>}
-                {p.rating && (
-                  <span className="rating-badge">{RATING_LABELS[p.rating]}</span>
-                )}
+                {p.menu && <div className="place-menu">{p.menu}</div>}
               </div>
             ))}
           </div>
@@ -144,7 +143,7 @@ export default function ProfilePage() {
             {friends.map((f, idx) => (
               <div key={f.id} className={`friend-row ${idx < friends.length - 1 ? "divider" : ""}`}>
                 <div className="friend-avatar" style={{ background: getAvatarColor(f.id) }}>
-                  {f.nickname[0]}
+                  {f.nickname.slice(-2)}
                 </div>
                 <span className="friend-name">{f.nickname}</span>
                 <span className="friend-tag">친구</span>
@@ -187,7 +186,7 @@ export default function ProfilePage() {
           justify-content: center;
           font-size: 22px;
           font-weight: 700;
-          color: var(--text);
+          color: #ffffff;
           flex-shrink: 0;
         }
         .username {
@@ -204,12 +203,29 @@ export default function ProfilePage() {
         /* Sections */
         .section { padding: 0 16px; margin-bottom: 24px; }
         .section-label {
-          font-size: 11px;
+          font-size: 1.1rem;
+          font-family: var(--font-title);
+          color: #ffffff;
           font-weight: 700;
-          color: var(--text-sub);
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          margin-bottom: 10px;
+          margin-bottom: 16px;
+          white-space: nowrap;
+          display: inline-block;
+          padding: 2px 10px;
+          border: 2px solid var(--text);
+          background: var(--text);
+          filter: url(#sketchy-line);
+          position: relative;
+        }
+        .section-label::after {
+          content: '';
+          position: absolute;
+          bottom: -9px;
+          left: 12px;
+          width: 0;
+          height: 0;
+          border-left: 6px solid transparent;
+          border-right: 6px solid transparent;
+          border-top: 8px solid var(--text);
         }
 
         /* Invite */
@@ -249,18 +265,38 @@ export default function ProfilePage() {
 
         /* My places */
         .places-list { display: flex; flex-direction: column; gap: 10px; }
-        .place-card { padding: 14px; display: flex; flex-direction: column; gap: 5px; }
-        .place-top {
+        .place-card { padding: 14px 22px; display: flex; flex-direction: column; gap: 5px; }
+        .card-top {
           display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 8px;
+          align-items: center;
+          gap: 17px;
+          margin-bottom: 8px;
+          flex-wrap: wrap;
         }
-        .place-name { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; }
-        .place-rating { font-size: 12px; color: var(--yellow); letter-spacing: 1px; flex-shrink: 0; }
-        .place-menu { font-size: 13px; color: var(--primary); }
-        .place-comment { font-size: 12px; color: var(--text-sub); font-style: italic; }
-        .place-addr { font-size: 11px; color: var(--text-sub); }
+        .place-name-badge {
+          font-size: 1.1rem;
+          font-family: var(--font-title);
+          color: var(--white);
+          background: var(--primary);
+          padding: 2px 12px;
+          border-radius: var(--radius-btn);
+          transform: rotate(-1deg);
+          display: inline-block;
+        }
+        .place-name { font-size: 1.2rem; font-family: var(--font-title); color: var(--text); margin-bottom: 2px; }
+        .place-rating { font-size: 22px; color: var(--yellow); letter-spacing: 2px; }
+        .place-menu {
+          font-size: 13px;
+          color: var(--primary);
+          background: var(--primary-light);
+          border: 1.5px solid var(--primary);
+          border-radius: 8px;
+          padding: 3px 7px;
+          display: inline-block;
+          align-self: flex-start;
+          margin-bottom: 6px;
+        }
+        .place-comment { font-size: 12px; color: var(--text-sub); font-style: italic; margin-bottom: 10px; line-height: 1.2; }
         .rating-badge {
           font-size: 11px;
           font-weight: 700;
@@ -303,7 +339,7 @@ export default function ProfilePage() {
           justify-content: center;
           font-size: 13px;
           font-weight: 700;
-          color: var(--text);
+          color: #ffffff;
           flex-shrink: 0;
         }
         .friend-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--text); }

@@ -1,66 +1,48 @@
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css");
+@import url("https://fonts.googleapis.com/css2?family=Gaegu:wght@300;400;700&display=swap");
 
 :root {
-  /* Brand */
-  --primary: #FF6B35;
-  --primary-light: #FFF0EB;
-  --yellow: #FFD600;
-  --yellow-light: #FFFDE7;
+  /* Brand - Sketchy Earthy Tones */
+  --primary: #A0522D; /* Sienna/Rosewood */
+  --primary-light: #FDF5E6; /* Old Lace */
+  --yellow: #DAA520; /* Goldenrod */
+  --yellow-light: #FFF8DC; /* Cornsilk */
 
-  /* Surface */
-  --bg: #FFFBF5;
+  /* Surface - Paper Feel */
+  --bg: #FFFDF5;
   --card-bg: #FFFFFF;
   --white: #FFFFFF;
 
-  /* Text */
-  --text: #1A0A00;
-  --text-sub: #999999;
-  --text-light: #CCCCCC;
+  /* Text - Pencil/Ink */
+  --text: #2F1E12;
+  --text-sub: #705C4E;
+  --text-light: #A89F94;
 
-  /* Border */
-  --border-color: #F0E0CC;
-  --border: 1.5px solid #F0E0CC;
-  --border-thin: 1px solid #F0E0CC;
+  /* Border - Hand-drawn feel */
+  --border-color: #8B4513; /* Saddle Brown */
+  --border: 2px solid var(--border-color);
+  --border-thin: 1px solid var(--border-color);
 
   /* Layout */
   --max-width: 390px;
-  --tab-height: 68px;
-  --dock-height: 68px;
-  --header-height: 56px;
+  --tab-height: 72px;
+  --dock-height: 72px;
+  --header-height: 60px;
 
-  /* Radius */
-  --radius-xs: 6px;
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-card: 14px;
-  --radius-btn: 12px;
-  --radius-full: 9999px;
+  /* Radius - Irregular */
+  --radius-xs: 255px 15px 225px 15px/15px 225px 15px 255px;
+  --radius-sm: 2px 8px 5px 12px/12px 5px 8px 2px;
+  --radius-md: 255px 15px 225px 15px/15px 225px 15px 255px;
+  --radius-lg: 30px 10px 40px 15px/15px 40px 10px 30px;
+  --radius-card: 255px 15px 225px 15px/15px 225px 15px 255px;
+  --radius-btn: 120px 20px 100px 25px/25px 100px 20px 120px;
+  --radius-full: 50% 50% 50% 50%/50% 50% 50% 50%;
 
-  /* Shadow */
-  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.07);
-  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.12);
+  /* Shadow - Soft graphite */
+  --shadow-card: 2px 4px 10px rgba(74, 44, 23, 0.1);
+  --shadow-float: 4px 8px 20px rgba(74, 44, 23, 0.15);
 
-  /* Legacy aliases */
-  --black: #1A0A00;
-  --background: #FFFBF5;
-  --foreground: #1A0A00;
-  --gray-50: #FFFBF5;
-  --gray-100: #F5EEE5;
-  --gray-200: #EAE0D5;
-  --gray-300: #D9CDBE;
-  --gray-400: #BFBAB0;
-  --gray-500: #999999;
-  --gray-600: #777777;
-  --gray-700: #555555;
-  --gray-800: #333333;
-  --gray-900: #1A0A00;
-  --yellow2: #FF6B35;
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,0.10);
-  --border-sketch: 1.5px solid #F0E0CC;
-  --radius: var(--radius-md);
+  --font-main: 'Gaegu', cursive;
+  --font-title: 'Gaegu', cursive;
 }
 
 * {
@@ -75,12 +57,13 @@ html, body {
   width: 100%;
   background-color: var(--bg);
   color: var(--text);
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
-  letter-spacing: -0.02em;
+  font-family: var(--font-main);
+  font-size: 16px;
+  letter-spacing: -0.03em;
 }
 
 body {
-  line-height: 1.5;
+  line-height: 1.4;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -100,21 +83,37 @@ button {
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--font-title);
+  font-weight: 400;
 }
 
 /* ── Card ── */
 .card {
   background: var(--card-bg);
   border-radius: var(--radius-card);
+  border: var(--border);
   box-shadow: var(--shadow-card);
+  position: relative;
+  filter: url(#sketchy-line);
+}
+
+.card::after {
+  content: '';
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  border: 1px solid rgba(139, 69, 19, 0.2);
+  border-radius: inherit;
+  z-index: -1;
+  transform: rotate(-0.5deg);
 }
 
 /* px-card is alias for card (legacy compat) */
 .px-card {
   background: var(--card-bg);
   border-radius: var(--radius-card);
+  border: var(--border);
   box-shadow: var(--shadow-card);
+  filter: url(#sketchy-line);
 }
 
 /* ── Buttons ── */
@@ -122,20 +121,22 @@ h1, h2, h3, h4, h5, h6 {
   background: var(--primary);
   color: #ffffff;
   border-radius: var(--radius-btn);
-  padding: 14px 20px;
+  padding: 10px 20px;
   font-weight: 700;
-  font-size: 14px;
-  font-family: inherit;
-  border: none;
+  font-size: 1.2rem;
+  font-family: var(--font-title);
+  border: var(--border);
+  box-shadow: 2px 2px 0px var(--text);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: opacity 0.1s;
+  transition: all 0.1s;
+  filter: url(#sketchy-line);
 }
-.btn-primary:active { opacity: 0.85; transform: scale(0.98); }
-.btn-primary:disabled { background: var(--gray-300); color: var(--gray-500); cursor: not-allowed; transform: none; }
+.btn-primary:active { transform: translate(1px, 1px); box-shadow: 1px 1px 0px var(--text); }
+.btn-primary:disabled { background: var(--text-light); color: var(--white); cursor: not-allowed; opacity: 0.6; }
 
 .btn-secondary {
   background: #ffffff;
@@ -155,7 +156,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* ── Input ── */
 input, textarea {
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Gaegu', cursive;
   background: var(--card-bg);
   border: 1.5px solid var(--border-color);
   border-radius: var(--radius-sm);
@@ -164,6 +165,7 @@ input, textarea {
   color: var(--text);
   outline: none;
   transition: border-color 0.15s;
+  filter: url(#sketchy-line);
 }
 input:focus, textarea:focus { border-color: var(--primary); }
 input::placeholder, textarea::placeholder { color: var(--text-light); }
@@ -178,8 +180,9 @@ input::placeholder, textarea::placeholder { color: var(--text-light); }
   font-size: 14px;
   color: var(--text);
   outline: none;
-  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: 'Gaegu', cursive;
   transition: border-color 0.15s;
+  filter: url(#sketchy-line);
 }
 .px-input:focus { border-color: var(--primary); }
 .px-input::placeholder { color: var(--text-light); }

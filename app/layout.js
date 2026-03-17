@@ -22,6 +22,20 @@ export default function RootLayout({ children }) {
         <NicknameSetup />
         <main>{children}</main>
         <SketchDock />
+        
+        {/* SVG Filter for sketchy/hand-drawn lines */}
+        <svg style={{ visibility: 'hidden', position: 'absolute', width: 0, height: 0 }} xmlns="http://www.w3.org/2000/svg">
+          <filter id="sketchy-line" x="-10%" y="-10%" width="120%" height="120%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="3" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G" />
+          </filter>
+          <filter id="watercolor" x="-30%" y="-30%" width="160%" height="160%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="4" seed="5" result="noise" />
+            <feDisplacementMap in="SourceGraphic" in2="noise" scale="12" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+            <feGaussianBlur in="displaced" stdDeviation="2" result="blurred" />
+            <feColorMatrix in="blurred" type="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 0.65 0" />
+          </filter>
+        </svg>
       </body>
     </html>
   );

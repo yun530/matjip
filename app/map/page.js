@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from "framer-motion";
 import { supabase } from "@/lib/supabase";
 import { getLocalUser, getFollowingIds } from "@/lib/userAuth";
 
@@ -14,9 +15,207 @@ function getAvatarColor(str) {
   return AVATAR_COLORS[Math.abs(h) % AVATAR_COLORS.length];
 }
 
+function PlacePopup({ place, onClose }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const springConfig = { stiffness: 100, damping: 5 };
+  const x = useMotionValue(0);
+  const rotate = useSpring(useTransform(x, [-100, 100], [-45, 45]), springConfig);
+  const translateX = useSpring(useTransform(x, [-100, 100], [-50, 50]), springConfig);
+
+  const handleMouseMove = (event) => {
+    const halfWidth = event.currentTarget.offsetWidth / 2;
+    x.set(event.nativeEvent.offsetX - halfWidth);
+  };
+
+  // 평균 별점
+  const rated = place.reviews.filter((r) => r.rating);
+  const avg = rated.length ? rated.reduce((s, r) => s + r.rating, 0) / rated.length : null;
+
+  // 추천메뉴 빈도 집계
+  const menuCount = {};
+  place.reviews.forEach((r) => {
+    if (!r.menu) return;
+    r.menu.split(/,\s*/).forEach((m) => {
+      const t = m.trim();
+      if (t) menuCount[t] = (menuCount[t] || 0) + 1;
+    });
+  });
+  const topMenus = Object.entries(menuCount).sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+  const kakaoLink = place.kakao_place_id
+    ? `https://place.map.kakao.com/${place.kakao_place_id}`
+    : `https://map.kakao.com/link/search/${encodeURIComponent(place.restaurant_name)}`;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 40, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: 40, scale: 0.92 }}
+      transition={{ type: "spring", stiffness: 260, damping: 10 }}
+      onClick={(e) => e.stopPropagation()}
+      style={{
+        position: "fixed",
+        bottom: "calc(var(--tab-height) + 32px)",
+        left: 16,
+        right: 16,
+        background: "var(--card-bg)",
+        border: "2px solid var(--text)",
+        borderRadius: 20,
+        padding: "14px 16px 16px",
+        boxShadow: "4px 4px 0px var(--text)",
+        maxHeight: "52vh",
+        overflowY: "auto",
+        zIndex: 3001,
+        filter: "url(#sketchy-line)",
+      }}
+    >
+      {/* Close */}
+      <button
+        onClick={onClose}
+        style={{
+          position: "absolute", top: 12, right: 12,
+          width: 28, height: 28,
+          background: "var(--bg)", borderRadius: "50%",
+          border: "none", cursor: "pointer",
+          fontSize: 12, fontWeight: 700, color: "var(--text-sub)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}
+      >✕</button>
+
+      {/* 음식점 이름 + 평균 별점 */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, paddingRight: 36, marginBottom: 4, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: "1.3rem", fontFamily: "var(--font-title)", color: "var(--text)", margin: 0 }}>
+          {place.restaurant_name}
+        </h2>
+        {avg && (
+          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+            <span style={{ fontSize: 15, color: "#F5A623" }}>★</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>{avg.toFixed(1)}</span>
+          </div>
+        )}
+      </div>
+
+      {place.address && (
+        <p style={{ fontSize: 12, color: "var(--text-sub)", marginBottom: 12 }}>📍 {place.address}</p>
+      )}
+
+      {/* 추천메뉴 빈도순 */}
+      {topMenus.length > 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+          {topMenus.map(([menu, count]) => (
+            <span key={menu} style={{
+              fontSize: 12, fontWeight: 700,
+              background: "var(--primary-light)", color: "var(--primary)",
+              padding: "2px 10px", borderRadius: 20,
+              display: "inline-flex", alignItems: "center", gap: 4,
+            }}>
+              {menu}
+              {count > 1 && <span style={{ fontSize: 10, opacity: 0.65 }}>×{count}</span>}
+            </span>
+          ))}
+        </div>
+      )}
+
+      {/* 리뷰어 아바타 */}
+      <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
+        {place.reviews.map((r, i) => (
+          <div
+            key={i}
+            style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
+            onMouseEnter={() => setHoveredIndex(i)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            <AnimatePresence mode="popLayout">
+              {hoveredIndex === i && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20, scale: 0.6 }}
+                  animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 10 } }}
+                  exit={{ opacity: 0, y: 20, scale: 0.6 }}
+                  style={{
+                    translateX,
+                    rotate,
+                    whiteSpace: "nowrap",
+                    position: "absolute",
+                    bottom: "calc(100% + 8px)",
+                    left: "50%",
+                    background: "var(--text)",
+                    color: "#fff",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    zIndex: 50,
+                    pointerEvents: "none",
+                  }}
+                >
+                  <div style={{ fontWeight: 700, fontSize: 13 }}>{r.users?.nickname}</div>
+                  {r.rating && (
+                    <div style={{ fontSize: 11, opacity: 0.8 }}>
+                      {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                      {r.comment && ` · ${r.comment}`}
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <div
+              onMouseMove={handleMouseMove}
+              style={{
+                width: 40, height: 40, borderRadius: "50%",
+                background: getAvatarColor(r.users?.id || String(i)),
+                display: "flex", alignItems: "center", justifyContent: "center",
+                fontSize: 15, fontWeight: 700, color: "#fff",
+                border: "2px solid var(--card-bg)",
+                cursor: "pointer",
+                transition: "transform 0.2s",
+                transform: hoveredIndex === i ? "scale(1.1)" : "scale(1)",
+              }}
+            >
+              {(r.users?.nickname || "?").slice(-2)}
+            </div>
+          </div>
+        ))}
+        <span style={{
+          marginLeft: Math.max(20, place.reviews.length * 4),
+          fontSize: 13, color: "var(--text-sub)", fontWeight: 700,
+        }}>
+          {place.count}명 추천
+        </span>
+      </div>
+
+      {/* 카카오맵 링크 */}
+      <a
+        href={kakaoLink}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          padding: "10px",
+          background: "#FAE100",
+          color: "#3A1D1D",
+          borderRadius: 12,
+          fontWeight: 700,
+          fontSize: 14,
+          fontFamily: "var(--font-title)",
+          textDecoration: "none",
+          border: "2px solid var(--text)",
+        }}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6, filter: 'url(#sketchy-line)' }}>
+          <path d="M3 6 L9 3 L15 6 L21 3 V18 L15 21 L9 18 L3 21 V6 Z" />
+        </svg>
+        카카오맵에서 보기
+      </a>
+    </motion.div>
+  );
+}
+
 function MapPageInner() {
   const searchParams = useSearchParams();
   const paramFriend = searchParams.get("friend");
+  const paramLat = searchParams.get("lat");
+  const paramLng = searchParams.get("lng");
 
   const mapRef = useRef(null);
   const containerRef = useRef(null);
@@ -27,40 +226,54 @@ function MapPageInner() {
   const [friends, setFriends] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(paramFriend || "all");
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [myId, setMyId] = useState(null);
 
-  // keep stable ref so kakao callbacks can reach state setter
   const setSelectedPlaceRef = useRef(null);
   setSelectedPlaceRef.current = setSelectedPlace;
 
-  /* ── render pins helper (sync, called after kakao loaded) ── */
+  const myIdRef = useRef(null);
+
   const renderPins = (map, groups, filter) => {
     overlaysRef.current.forEach((o) => o.setMap(null));
     overlaysRef.current = [];
 
     const visible = Object.values(groups).filter((p) => {
       if (filter === "all") return true;
+      if (filter === "me") return p.reviews.some((r) => r.user_id === myIdRef.current);
       return p.reviews.some((r) => r.user_id === filter);
     });
 
     visible.forEach((place) => {
       const position = new window.kakao.maps.LatLng(place.lat, place.lng);
-      const pinColor =
-        place.count >= 5 ? "#FF6B35" : place.count >= 3 ? "#FFD600" : "#FFFFFF";
+      
+      const isBad = place.avgRating < 3;
+      const isPopular = place.count >= 3;
+      const markerColor = isBad ? "#FF4D4D" : (isPopular ? "#FFD600" : "#FFFFFF");
+      
+      let iconContent = "";
+      if (isBad) {
+        // Hand-drawn X Icon - Slightly Lager for visibility
+        iconContent = `
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="${markerColor}" stroke-width="1.0" stroke-linecap="round" style="filter: url(#sketchy-line) drop-shadow(1px 1px 0px rgba(0,0,0,0.1));">
+            <path d="M18 6 L6 18 M6 6 L18 18" />
+          </svg>`;
+      } else {
+        // Hand-drawn Star Icon - Slightly Larger for visibility
+        iconContent = `
+          <svg width="38" height="38" viewBox="0 0 24 24" fill="${markerColor}" stroke="#2F1E12" stroke-width="1.0" stroke-linejoin="round" style="filter: url(#sketchy-line) drop-shadow(1px 1.5px 0px rgba(0,0,0,0.1));">
+            <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 L12 2 Z" />
+            <text x="12" y="16.5" text-anchor="middle" fill="#2F1E12" font-size="12" font-family="'Gaegu', cursive" font-weight="400">${place.count}</text>
+          </svg>`;
+      }
 
       const content = `
         <div onclick="window.__zzp_selectPlace('${place.key}')"
-             style="cursor:pointer;filter:drop-shadow(0 2px 6px rgba(0,0,0,0.20));">
-          <svg width="40" height="52" viewBox="0 0 40 52" xmlns="http://www.w3.org/2000/svg">
-            <path d="M20 2C11 2 3 9 3 19C3 27 9 36 16 44C17.5 46 19 49 20 51C21 49 22.5 46 24 44C31 36 37 27 37 19C37 9 29 2 20 2Z"
-                  fill="${pinColor}" stroke="#1A0A00" stroke-width="1.8"/>
-            <circle cx="20" cy="18" r="9" fill="white" stroke="#1A0A00" stroke-width="1.5"/>
-            <text x="20" y="23" text-anchor="middle" fill="#1A0A00"
-                  font-size="10" font-weight="700" font-family="Pretendard,-apple-system,sans-serif">${place.count}</text>
-          </svg>
+             style="cursor:pointer; transform: translate(${isBad ? '-16px, -16px' : '-19px, -19px'});">
+          ${iconContent}
         </div>`;
 
       const overlay = new window.kakao.maps.CustomOverlay({
-        position, content, map, yAnchor: 1.15,
+        position, content, map, yAnchor: 0.5,
       });
       overlaysRef.current.push(overlay);
     });
@@ -70,6 +283,10 @@ function MapPageInner() {
   const loadData = async (map) => {
     try {
       const localUser = getLocalUser();
+      if (localUser) {
+        setMyId(localUser.id);
+        myIdRef.current = localUser.id;
+      }
       let query = supabase.from("reviews").select("*, users(id, nickname)");
 
       if (localUser) {
@@ -87,11 +304,17 @@ function MapPageInner() {
       // group by lat/lng key
       const groups = (reviews || []).reduce((acc, r) => {
         const key = `${r.lat}_${r.lng}`;
-        if (!acc[key]) acc[key] = { ...r, key, count: 0, reviews: [] };
+        if (!acc[key]) acc[key] = { ...r, key, count: 0, reviews: [], sumRating: 0 };
         acc[key].count += 1;
+        acc[key].sumRating += (r.rating || 0);
         acc[key].reviews.push(r);
         return acc;
       }, {});
+
+      // Calculate avgRating for each group
+      Object.keys(groups).forEach(key => {
+        groups[key].avgRating = groups[key].sumRating / groups[key].count;
+      });
 
       allGroupsRef.current = groups;
 
@@ -100,12 +323,24 @@ function MapPageInner() {
         setSelectedPlaceRef.current(allGroupsRef.current[key]);
 
       renderPins(map, groups, selectedFriend);
+
+      // auto-open place from home page navigation
+      if (paramLat && paramLng) {
+        const pLat = parseFloat(paramLat);
+        const pLng = parseFloat(paramLng);
+        const target = Object.values(groups).find(
+          (g) => Math.abs(g.lat - pLat) < 0.001 && Math.abs(g.lng - pLng) < 0.001
+        );
+        if (target) {
+          map.setCenter(new window.kakao.maps.LatLng(target.lat, target.lng));
+          setSelectedPlaceRef.current(target);
+        }
+      }
     } catch (err) {
       console.error("데이터 로드 오류:", err);
     }
   };
 
-  /* ── map initialization ── */
   useEffect(() => {
     let isMounted = true;
 
@@ -122,11 +357,9 @@ function MapPageInner() {
         });
         mapRef.current = map;
 
-        // show map immediately; load data in background
         setMapStatus("success");
         loadData(map);
 
-        // current location dot
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition((pos) => {
             const loc = new window.kakao.maps.LatLng(
@@ -165,7 +398,6 @@ function MapPageInner() {
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── re-render pins when filter changes ── */
   useEffect(() => {
     if (!mapRef.current || Object.keys(allGroupsRef.current).length === 0) return;
     renderPins(mapRef.current, allGroupsRef.current, selectedFriend);
@@ -178,7 +410,6 @@ function MapPageInner() {
 
   return (
     <div className="map-wrap">
-      {/* Loading */}
       {mapStatus === "loading" && (
         <div className="overlay">
           <div className="spinner" />
@@ -194,14 +425,12 @@ function MapPageInner() {
         </div>
       )}
 
-      {/* Kakao map container — always in DOM so SDK can measure it */}
       <div
         ref={containerRef}
         className="kakao-map"
         style={{ visibility: mapStatus === "success" ? "visible" : "hidden" }}
       />
 
-      {/* Friend filter tabs */}
       {mapStatus === "success" && (
         <div className="filter-wrap">
           <div className="filter-tabs">
@@ -210,6 +439,12 @@ function MapPageInner() {
               onClick={() => handleFriendTab("all")}
             >
               전체
+            </button>
+            <button
+              className={`filter-tab ${selectedFriend === "me" ? "active" : ""}`}
+              onClick={() => handleFriendTab("me")}
+            >
+              나
             </button>
             {friends.map((f) => (
               <button
@@ -224,63 +459,48 @@ function MapPageInner() {
         </div>
       )}
 
-      {/* Pin legend */}
       {mapStatus === "success" && (
         <div className="legend">
-          <div className="legend-row"><span className="dot orange" />5+명</div>
-          <div className="legend-row"><span className="dot yellow" />3+명</div>
-          <div className="legend-row"><span className="dot white" />1+명</div>
+          <div className="legend-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFD600" stroke="#2F1E12" strokeWidth="1.0" style={{ filter: "url(#sketchy-line)" }}>
+              <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 L12 2 Z" />
+            </svg>
+            <span>3명 이상</span>
+          </div>
+          <div className="legend-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFFFFF" stroke="#2F1E12" strokeWidth="1.0" style={{ filter: "url(#sketchy-line)" }}>
+              <path d="M12 2 L15.09 8.26 L22 9.27 L17 14.14 L18.18 21.02 L12 17.77 L5.82 21.02 L7 14.14 L2 9.27 L8.91 8.26 L12 2 Z" />
+            </svg>
+            <span>1~2명 추천</span>
+          </div>
+          <div className="legend-row">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FF4D4D" strokeWidth="1.0" strokeLinecap="round" style={{ filter: "url(#sketchy-line)" }}>
+              <path d="M18 6 L6 18 M6 6 L18 18" />
+            </svg>
+            <span>별로인 곳 (3점 미만)</span>
+          </div>
         </div>
       )}
 
-      {/* Location FAB */}
       {mapStatus === "success" && (
         <button className="fab" onClick={() => window.location.reload()}>📍</button>
       )}
 
-      {/* Bottom slide card */}
-      {selectedPlace && (
-        <div className="sheet-backdrop" onClick={() => setSelectedPlace(null)}>
-          <div className="bottom-sheet" onClick={(e) => e.stopPropagation()}>
-            <div className="sheet-handle" />
-            <button className="sheet-close" onClick={() => setSelectedPlace(null)}>✕</button>
-
-            <div className="sheet-header">
-              <h2 className="sheet-name">{selectedPlace.restaurant_name}</h2>
-              {selectedPlace.address && (
-                <p className="sheet-addr">📍 {selectedPlace.address}</p>
-              )}
-              <span className="sheet-count">추천 {selectedPlace.count}명</span>
-            </div>
-
-            <div className="review-list">
-              {selectedPlace.reviews.map((r, i) => (
-                <div key={i} className="review-item">
-                  <div className="rev-top">
-                    <div
-                      className="rev-avatar"
-                      style={{ background: getAvatarColor(r.users?.id || String(i)) }}
-                    >
-                      {(r.users?.nickname || "?")[0]}
-                    </div>
-                    <div>
-                      <div className="rev-name">{r.users?.nickname || "알 수 없음"}</div>
-                      {r.rating && (
-                        <div className="rev-rating">
-                          {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
-                          {" "}<span className="rev-rating-label">{RATING_LABELS[r.rating]}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  {r.menu && <div className="rev-menu">{r.menu}</div>}
-                  {r.comment && <p className="rev-comment">"{r.comment}"</p>}
-                </div>
-              ))}
-            </div>
+      {/* Popup */}
+      <AnimatePresence>
+        {selectedPlace && (
+          <div
+            style={{ position: "fixed", inset: 0, zIndex: 3000, background: "rgba(0,0,0,0.3)" }}
+            onClick={() => setSelectedPlace(null)}
+          >
+            <PlacePopup
+              key={selectedPlace.key}
+              place={selectedPlace}
+              onClose={() => setSelectedPlace(null)}
+            />
           </div>
-        </div>
-      )}
+        )}
+      </AnimatePresence>
 
       <style jsx>{`
         .map-wrap {
@@ -291,7 +511,6 @@ function MapPageInner() {
         }
         .kakao-map { width: 100%; height: 100%; }
 
-        /* Overlay (loading / error) */
         .overlay {
           position: absolute; inset: 0; z-index: 2000;
           background: rgba(255,251,245,0.93);
@@ -304,7 +523,7 @@ function MapPageInner() {
           background: var(--primary); color: #fff;
           border-radius: var(--radius-btn);
           font-size: 14px; font-weight: 700;
-          font-family: Pretendard, sans-serif;
+          font-family: 'Gaegu', cursive;
           border: none; cursor: pointer;
         }
         .spinner {
@@ -316,7 +535,6 @@ function MapPageInner() {
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* Filter tabs */
         .filter-wrap {
           position: absolute;
           top: 12px; left: 12px; right: 12px;
@@ -331,18 +549,18 @@ function MapPageInner() {
 
         .filter-tab {
           flex-shrink: 0;
-          padding: 7px 16px;
-          background: rgba(255,255,255,0.95);
-          color: var(--text-sub);
-          border-radius: var(--radius-full);
+          padding: 3px 10px;
+          background: var(--primary-light);
+          color: var(--primary);
+          border-radius: 8px;
           font-size: 13px; font-weight: 700;
-          font-family: Pretendard, sans-serif;
-          border: 1.5px solid var(--border-color);
+          font-family: 'Gaegu', cursive;
+          border: 1.5px solid var(--primary);
           cursor: pointer;
-          backdrop-filter: blur(6px);
           transition: all 0.15s;
-          min-height: 34px;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+          min-height: 30px;
+          backdrop-filter: blur(6px);
+          filter: url(#sketchy-line);
         }
         .filter-tab.active {
           background: var(--primary);
@@ -351,7 +569,6 @@ function MapPageInner() {
         }
         .filter-tab:active { transform: scale(0.95); }
 
-        /* Legend */
         .legend {
           position: absolute;
           top: 62px; left: 12px;
@@ -363,6 +580,7 @@ function MapPageInner() {
           display: flex; flex-direction: column; gap: 5px;
           backdrop-filter: blur(6px);
           box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+          filter: url(#sketchy-line);
         }
         .legend-row {
           display: flex; align-items: center; gap: 6px;
@@ -378,7 +596,6 @@ function MapPageInner() {
         .dot.yellow { background: #FFD600; }
         .dot.white  { background: #ffffff; }
 
-        /* FAB */
         .fab {
           position: absolute;
           right: 14px; bottom: 20px; z-index: 1000;
@@ -393,76 +610,6 @@ function MapPageInner() {
           box-shadow: var(--shadow-card);
         }
         .fab:active { transform: scale(0.92); }
-
-        /* Bottom sheet */
-        .sheet-backdrop {
-          position: fixed; inset: 0; z-index: 3000;
-          background: rgba(0,0,0,0.30);
-          display: flex; align-items: flex-end;
-        }
-        .bottom-sheet {
-          width: 100%; max-height: 70vh;
-          background: var(--card-bg);
-          border-radius: 20px 20px 0 0;
-          border-top: 1.5px solid var(--border-color);
-          padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
-          overflow-y: auto;
-          display: flex; flex-direction: column; gap: 14px;
-          position: relative;
-          animation: slideUp 0.22s ease-out;
-        }
-        @keyframes slideUp {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0); }
-        }
-
-        .sheet-handle {
-          width: 36px; height: 4px;
-          background: var(--border-color);
-          border-radius: 2px;
-          margin: 0 auto 2px;
-          flex-shrink: 0;
-        }
-        .sheet-close {
-          position: absolute; top: 14px; right: 14px;
-          width: 28px; height: 28px;
-          background: var(--bg); border-radius: var(--radius-full);
-          font-size: 12px; font-weight: 700; color: var(--text-sub);
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; border: none;
-        }
-
-        .sheet-header { padding-right: 36px; }
-        .sheet-name { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
-        .sheet-addr { font-size: 12px; color: var(--text-sub); margin-bottom: 8px; }
-        .sheet-count {
-          font-size: 12px; font-weight: 700;
-          background: var(--primary-light); color: var(--primary);
-          padding: 3px 10px; border-radius: var(--radius-full);
-          display: inline-block;
-        }
-
-        .review-list { display: flex; flex-direction: column; gap: 10px; }
-        .review-item {
-          background: var(--bg); border-radius: var(--radius-md);
-          padding: 12px; display: flex; flex-direction: column; gap: 7px;
-        }
-        .rev-top { display: flex; align-items: center; gap: 10px; }
-        .rev-avatar {
-          width: 34px; height: 34px; border-radius: var(--radius-full);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 13px; font-weight: 700; color: var(--text); flex-shrink: 0;
-        }
-        .rev-name { font-size: 13px; font-weight: 700; color: var(--text); }
-        .rev-rating { font-size: 12px; color: #F5A623; letter-spacing: 1px; }
-        .rev-rating-label { font-size: 11px; color: var(--text-sub); font-weight: 500; letter-spacing: 0; }
-        .rev-menu {
-          font-size: 12px; font-weight: 700;
-          background: var(--primary-light); color: var(--primary);
-          padding: 3px 10px; border-radius: var(--radius-full);
-          display: inline-block; width: fit-content;
-        }
-        .rev-comment { font-size: 13px; color: var(--text-sub); font-style: italic; margin: 0; }
       `}</style>
     </div>
   );
