@@ -32,6 +32,9 @@ jobs:
         run: npm run build
         env:
           NODE_ENV: production
+          NEXT_PUBLIC_KAKAO_MAP_API_KEY: 45d3b94c75c2da908411b3c34258f2ac
+          NEXT_PUBLIC_SUPABASE_URL: https://gwbbkeevzmwulhnxxvdp.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_X_Rh2nI--lk5vf5ZmqaYeg_47cEBmqM
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
