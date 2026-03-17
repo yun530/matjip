@@ -343,58 +343,61 @@ function MapPageInner() {
 
   useEffect(() => {
     let isMounted = true;
+    let pollInterval = null;
+    let giveUpTimeout = null;
 
-    const startMap = () => {
-      if (!window.kakao || !window.kakao.maps) return;
-      window.kakao.maps.load(() => {
-        if (!isMounted || mapRef.current) return;
-        const container = containerRef.current;
-        if (!container) return;
+    const initMap = () => {
+      if (!isMounted || mapRef.current) return;
+      const container = containerRef.current;
+      if (!container) return;
 
-        const map = new window.kakao.maps.Map(container, {
-          center: new window.kakao.maps.LatLng(37.5665, 126.978),
-          level: 4,
-        });
-        mapRef.current = map;
-
-        setMapStatus("success");
-        loadData(map);
-
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const loc = new window.kakao.maps.LatLng(
-              pos.coords.latitude, pos.coords.longitude
-            );
-            map.setCenter(loc);
-            new window.kakao.maps.Circle({
-              center: loc, radius: 20, strokeWeight: 0,
-              fillColor: "#4285F4", fillOpacity: 0.5, map,
-            });
-          });
-        }
+      const map = new window.kakao.maps.Map(container, {
+        center: new window.kakao.maps.LatLng(37.5665, 126.978),
+        level: 4,
       });
+      mapRef.current = map;
+      if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+      if (giveUpTimeout) { clearTimeout(giveUpTimeout); giveUpTimeout = null; }
+
+      setMapStatus("success");
+      loadData(map);
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          const loc = new window.kakao.maps.LatLng(
+            pos.coords.latitude, pos.coords.longitude
+          );
+          map.setCenter(loc);
+          new window.kakao.maps.Circle({
+            center: loc, radius: 20, strokeWeight: 0,
+            fillColor: "#4285F4", fillOpacity: 0.5, map,
+          });
+        });
+      }
     };
 
-    if (window.kakao && window.kakao.maps) {
-      startMap();
-    }
-
-    const handleLoad = () => startMap();
-    window.addEventListener("kakao-sdk-loaded", handleLoad);
-
-    const timeout = setTimeout(() => {
-      if (isMounted && !mapRef.current) {
-        startMap();
-        setTimeout(() => {
-          if (isMounted && !mapRef.current) setMapStatus("error");
-        }, 2000);
+    const tryInit = () => {
+      if (!isMounted || mapRef.current) return;
+      if (window.kakao && window.kakao.maps && typeof window.kakao.maps.Map === "function") {
+        initMap();
+      } else if (window.kakao && window.kakao.maps && typeof window.kakao.maps.load === "function") {
+        window.kakao.maps.load(() => { if (isMounted) initMap(); });
       }
-    }, 2000);
+    };
+
+    // Poll every 200ms until kakao is ready
+    pollInterval = setInterval(tryInit, 200);
+    tryInit(); // try immediately too
+
+    // Give up after 10s
+    giveUpTimeout = setTimeout(() => {
+      if (isMounted && !mapRef.current) setMapStatus("error");
+    }, 10000);
 
     return () => {
       isMounted = false;
-      window.removeEventListener("kakao-sdk-loaded", handleLoad);
-      clearTimeout(timeout);
+      if (pollInterval) clearInterval(pollInterval);
+      if (giveUpTimeout) clearTimeout(giveUpTimeout);
     };
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
