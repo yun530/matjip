@@ -34,7 +34,7 @@ jobs:
           NODE_ENV: production
           NEXT_PUBLIC_KAKAO_MAP_API_KEY: 45d3b94c75c2da908411b3c34258f2ac
           NEXT_PUBLIC_SUPABASE_URL: https://gwbbkeevzmwulhnxxvdp.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: sb_publishable_X_Rh2nI--lk5vf5ZmqaYeg_47cEBmqM
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd3YmJrZWV2em13dWxobnh4dmRwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMzMDY2ODUsImV4cCI6MjA4ODg4MjY4NX0.q7SoguJSzMKcMwF0ikCii2ElWmHyfSUB-qYNXT6-rEE
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
