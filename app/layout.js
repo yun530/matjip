@@ -2,6 +2,7 @@ import "./globals.css";
 import SketchDock from "./components/SketchDock";
 import KakaoScript from "./components/KakaoScript";
 import NicknameSetup from "./components/NicknameSetup";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 export const metadata = {
   title: "쩝쩝박사지도 | 지인 추천 맛집 지도",
@@ -18,10 +19,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="ko">
       <body>
+        <ErrorBoundary>
         <KakaoScript />
         <NicknameSetup />
         <main>{children}</main>
         <SketchDock />
+        </ErrorBoundary>
         
         {/* SVG Filter for sketchy/hand-drawn lines */}
         <svg style={{ visibility: 'hidden', position: 'absolute', width: 0, height: 0 }} xmlns="http://www.w3.org/2000/svg">
