@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(open:*)",
-      "Bash(gh auth:*)"
+      "Bash(gh auth:*)",
+      "Bash(vercel --version)",
+      "Bash(npm install:*)"
     ]
   }
 }

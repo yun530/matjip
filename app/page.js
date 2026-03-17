@@ -287,7 +287,7 @@ export default function Home() {
         .map-overlay {
           position: absolute; inset: 0; z-index: 2000;
           background-color: rgba(255, 255, 255, 0.85);
-          background-image: url('/crooked_map_bg.png');
+          background-image: url('/matjip/crooked_map_bg.png');
           background-size: 400px;
           background-repeat: repeat;
           background-blend-mode: multiply;

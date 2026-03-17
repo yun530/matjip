@@ -189,7 +189,7 @@ export default function AuthPage() {
         .bg-image {
           position: absolute;
           inset: 0;
-          background-image: url('/login_bg.jpg');
+          background-image: url('/matjip/login_bg.jpg');
           background-size: cover;
           background-position: center;
           opacity: 0.45;

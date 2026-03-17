@@ -27,7 +27,8 @@ export default function ProfilePage() {
 
       if (data) {
         setUser(data);
-        setInviteLink(`${window.location.origin}/invite/${data.invite_code}`);
+        const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
+        setInviteLink(`${window.location.origin}${base}/invite?code=${data.invite_code}`);
       }
 
       const friendList = await getFollowingUsers(localUser.id);
@@ -118,7 +119,7 @@ export default function ProfilePage() {
         .bg-image {
           position: fixed;
           inset: 0;
-          background-image: url('/login_bg.jpg');
+          background-image: url('/matjip/login_bg.jpg');
           background-size: cover;
           background-position: center;
           opacity: 0.45;

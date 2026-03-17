@@ -62,7 +62,7 @@ html, body {
   height: 100%;
   width: 100%;
   background-color: var(--background);
-  background-image: url('/crooked_map_bg.png');
+  background-image: url('/matjip/crooked_map_bg.png');
   background-size: 400px;
   background-repeat: repeat;
   background-blend-mode: multiply;
