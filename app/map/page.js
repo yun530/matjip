@@ -387,9 +387,9 @@ function MapPageInner() {
         startMap();
         setTimeout(() => {
           if (isMounted && !mapRef.current) setMapStatus("error");
-        }, 3000);
+        }, 2000);
       }
-    }, 5000);
+    }, 2000);
 
     return () => {
       isMounted = false;
@@ -421,6 +421,9 @@ function MapPageInner() {
         <div className="overlay">
           <span style={{ fontSize: "2rem" }}>⚠️</span>
           <p>지도를 불러오는 데 실패했습니다.</p>
+          <p style={{ fontSize: "12px", color: "var(--text-sub)", marginTop: 4 }}>
+            키: {process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY ? process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY.slice(0, 6) + "…" : "❌ 없음"}
+          </p>
           <button onClick={() => window.location.reload()}>다시 시도</button>
         </div>
       )}
