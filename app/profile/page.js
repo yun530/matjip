@@ -3,40 +3,49 @@
 import { useState, useEffect } from "react";
 import { getLocalUser, getFollowingUsers } from "@/lib/userAuth";
 
+const AVATAR_COLORS = ["#FFD600", "#FF6B35", "#4ECDC4", "#A8E6CF", "#FFB7B2", "#C7CEEA", "#FFEAA7", "#DDA0DD"];
+
+function getAvatarColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+const RATING_LABELS = { 1: "별로", 2: "그냥그래", 3: "괜찮아", 4: "맛있어", 5: "최고야!" };
+
 export default function ProfilePage() {
   const [user, setUser] = useState(null);
   const [friends, setFriends] = useState([]);
+  const [myPlaces, setMyPlaces] = useState([]);
   const [inviteLink, setInviteLink] = useState("");
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const localUser = getLocalUser();
-    if (!localUser) {
-      setLoading(false);
-      return;
-    }
+    if (!localUser) { setLoading(false); return; }
 
-    const loadData = async () => {
+    (async () => {
       const { supabase } = await import("@/lib/supabase");
-      const { data } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", localUser.id)
-        .single();
+      const [{ data: userData }, friendList, { data: places }] = await Promise.all([
+        supabase.from("users").select("*").eq("id", localUser.id).single(),
+        getFollowingUsers(localUser.id),
+        supabase
+          .from("reviews")
+          .select("*")
+          .eq("user_id", localUser.id)
+          .order("created_at", { ascending: false }),
+      ]);
 
-      if (data) {
-        setUser(data);
-        const base = process.env.NEXT_PUBLIC_BASE_PATH || '';
-        setInviteLink(`${window.location.origin}${base}/invite?code=${data.invite_code}`);
+      if (userData) {
+        setUser(userData);
+        const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+        setInviteLink(`${window.location.origin}${base}/invite?code=${userData.invite_code}`);
       }
-
-      const friendList = await getFollowingUsers(localUser.id);
       setFriends(friendList);
+      setMyPlaces(places || []);
       setLoading(false);
-    };
-
-    loadData();
+    })();
   }, []);
 
   const handleCopy = async () => {
@@ -49,118 +58,263 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="profile-container container">
-        <p style={{ textAlign: "center", color: "var(--gray-400)", paddingTop: "80px" }}>
-          로딩 중...
-        </p>
-      </div>
-    );
-  }
+  if (loading) return (
+    <div className="page">
+      <div className="loading">불러오는 중…</div>
+    </div>
+  );
 
-  if (!user) {
-    return (
-      <div className="profile-container container">
-        <p style={{ textAlign: "center", paddingTop: "80px" }}>
-          사용자 정보를 불러올 수 없어요.
-        </p>
-      </div>
-    );
-  }
+  if (!user) return (
+    <div className="page">
+      <div className="loading">사용자 정보를 불러올 수 없어요.</div>
+    </div>
+  );
 
   return (
-    <div className="profile-container container">
-      {/* 배경 이미지 */}
-      <div className="bg-image" />
-      <div className="vignette" />
-      {/* 내 프로필 */}
-      <div className="profile-card">
-        <div className="avatar-circle">{user.nickname[0]}</div>
-        <div>
-          <h2>{user.nickname}</h2>
-          <p className="friends-count">친구 {friends.length}명</p>
+    <div className="page">
+      {/* 프로필 헤더 */}
+      <div className="profile-header">
+        <div className="avatar" style={{ background: getAvatarColor(user.id) }}>
+          {user.nickname[0]}
+        </div>
+        <div className="profile-info">
+          <div className="username">{user.nickname}</div>
+          <div className="stats-row">
+            <span className="stat"><b>{myPlaces.length}</b> 맛집</span>
+            <span className="stat-divider">·</span>
+            <span className="stat"><b>{friends.length}</b> 친구</span>
+          </div>
         </div>
       </div>
 
       {/* 초대 링크 */}
-      <div className="section">
-        <h3>친구 초대하기</h3>
-        <p className="section-desc">링크를 보내면 맞팔이 돼요!</p>
-        <div className="invite-box">
-          <span className="invite-link">{inviteLink}</span>
-          <button className="copy-btn" onClick={handleCopy}>
-            {copied ? "✅ 복사됨" : "복사"}
-          </button>
+      <section className="section">
+        <div className="section-label">친구 초대</div>
+        <div className="invite-card card">
+          <p className="invite-desc">링크를 공유하면 맞팔이 돼요!</p>
+          <div className="invite-row">
+            <div className="invite-link-box">
+              <span className="invite-link">{inviteLink}</span>
+            </div>
+            <button className="copy-btn" onClick={handleCopy}>
+              {copied ? "✓ 복사됨" : "복사"}
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* 친구 목록 */}
-      <div className="section">
-        <h3>친구 목록</h3>
-        {friends.length === 0 ? (
-          <div className="empty-friends">
-            <span>🫂</span>
-            <p>아직 친구가 없어요.<br />초대 링크를 공유해 보세요!</p>
+      {/* 내 맛집 */}
+      <section className="section">
+        <div className="section-label">내가 올린 맛집 ({myPlaces.length})</div>
+        {myPlaces.length === 0 ? (
+          <div className="empty-card card">
+            <span className="empty-emoji">🍽️</span>
+            <p className="empty-title">아직 등록한 맛집이 없어요</p>
+            <p className="empty-sub">첫 번째 맛집을 등록해 보세요!</p>
           </div>
         ) : (
-          <div className="friends-list">
-            {friends.map((friend) => (
-              <div key={friend.id} className="friend-item">
-                <div className="friend-avatar">{friend.nickname[0]}</div>
-                <span>{friend.nickname}</span>
+          <div className="places-list">
+            {myPlaces.map((p) => (
+              <div key={p.id} className="place-card card">
+                <div className="place-top">
+                  <div className="place-name">{p.restaurant_name}</div>
+                  {p.rating && (
+                    <span className="place-rating">
+                      {"★".repeat(p.rating)}{"☆".repeat(5 - p.rating)}
+                    </span>
+                  )}
+                </div>
+                {p.menu && <div className="place-menu">{p.menu}</div>}
+                {p.comment && <div className="place-comment">"{p.comment}"</div>}
+                {p.address && <div className="place-addr">📍 {p.address}</div>}
+                {p.rating && (
+                  <span className="rating-badge">{RATING_LABELS[p.rating]}</span>
+                )}
               </div>
             ))}
           </div>
         )}
-      </div>
+      </section>
+
+      {/* 친구 목록 */}
+      {friends.length > 0 && (
+        <section className="section">
+          <div className="section-label">친구 ({friends.length})</div>
+          <div className="friends-card card">
+            {friends.map((f, idx) => (
+              <div key={f.id} className={`friend-row ${idx < friends.length - 1 ? "divider" : ""}`}>
+                <div className="friend-avatar" style={{ background: getAvatarColor(f.id) }}>
+                  {f.nickname[0]}
+                </div>
+                <span className="friend-name">{f.nickname}</span>
+                <span className="friend-tag">친구</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <style jsx>{`
-        .bg-image {
-          position: fixed;
-          inset: 0;
-          background-image: url('/matjip/login_bg.jpg');
-          background-size: cover;
-          background-position: center;
-          opacity: 0.45;
-          pointer-events: none;
-          z-index: -1;
+        .page {
+          max-width: var(--max-width);
+          margin: 0 auto;
+          padding-bottom: calc(var(--tab-height) + 16px);
+          min-height: 100vh;
         }
-        .vignette {
-          position: fixed;
-          inset: 0;
-          background: radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.6) 70%, rgba(255,255,255,0.95) 100%);
-          pointer-events: none;
-          z-index: -1;
+        .loading {
+          text-align: center;
+          padding: 60px 0;
+          color: var(--text-sub);
+          font-size: 14px;
         }
-        .profile-container { padding-top: 24px; padding-bottom: 100px; max-width: 500px !important; display: flex; flex-direction: column; gap: 20px; }
 
-        .profile-card { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); padding: 24px; display: flex; align-items: center; gap: 20px; }
-        .profile-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .avatar-circle { width: 70px; height: 70px; border-radius: 50%; border: 2.5px solid var(--black); background: rgba(49,130,246,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; flex-shrink: 0; }
-        .profile-card h2 { font-size: 1.4rem; margin: 0 0 6px; color: var(--gray-900); font-weight: 700; }
-        .friends-count { color: var(--gray-600); font-size: 0.95rem; margin: 0; font-weight: 700; background: var(--gray-100); padding: 4px 12px; border-radius: var(--radius-full); border: 2px solid var(--black); display: inline-block; }
+        /* Profile header */
+        .profile-header {
+          background: var(--card-bg);
+          border-bottom: 1.5px solid var(--border-color);
+          padding: 24px 16px 20px;
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          margin-bottom: 20px;
+        }
+        .avatar {
+          width: 56px;
+          height: 56px;
+          border-radius: var(--radius-full);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 22px;
+          font-weight: 700;
+          color: var(--text);
+          flex-shrink: 0;
+        }
+        .username {
+          font-size: 18px;
+          font-weight: 900;
+          color: var(--text);
+          margin-bottom: 4px;
+        }
+        .stats-row { display: flex; align-items: center; gap: 6px; }
+        .stat { font-size: 13px; color: var(--text-sub); }
+        .stat b { color: var(--text); font-weight: 700; }
+        .stat-divider { color: var(--text-sub); }
 
-        .section { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); padding: 24px; }
-        .section::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .section h3 { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin: 0 0 6px; }
-        .section-desc { color: var(--gray-500); font-size: 0.95rem; margin: 0 0 16px; font-weight: 400; }
+        /* Sections */
+        .section { padding: 0 16px; margin-bottom: 24px; }
+        .section-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        }
 
-        .invite-box { position: relative; display: flex; gap: 8px; align-items: center; background: var(--gray-50); border: none; border-radius: var(--radius-lg); padding: 12px 16px; }
-        .invite-box::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .invite-link { flex: 1; font-size: 0.95rem; color: var(--gray-700); font-weight: 500; word-break: break-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .copy-btn { position: relative; background: var(--white); color: var(--gray-700); border: 2px solid var(--black); border-radius: var(--radius-md); padding: 8px 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.1s; font-family: inherit; }
-        .copy-btn:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
+        /* Invite */
+        .invite-card { padding: 16px; }
+        .invite-desc { font-size: 13px; color: var(--text-sub); margin-bottom: 10px; }
+        .invite-row { display: flex; gap: 8px; }
+        .invite-link-box {
+          flex: 1;
+          background: var(--bg);
+          border-radius: var(--radius-sm);
+          padding: 10px 12px;
+          overflow: hidden;
+          border: 1px solid var(--border-color);
+        }
+        .invite-link {
+          font-size: 11px;
+          color: var(--text-sub);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          display: block;
+        }
+        .copy-btn {
+          padding: 10px 16px;
+          background: var(--primary);
+          color: #fff;
+          border-radius: var(--radius-sm);
+          font-size: 13px;
+          font-weight: 700;
+          cursor: pointer;
+          white-space: nowrap;
+          flex-shrink: 0;
+          font-family: inherit;
+          transition: opacity 0.1s;
+        }
+        .copy-btn:active { opacity: 0.85; }
 
-        .empty-friends { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 0; color: var(--gray-500); text-align: center; }
-        .empty-friends span { font-size: 2.5rem; opacity: 0.6; margin-bottom: 8px; }
-        .empty-friends p { font-size: 1rem; line-height: 1.5; margin: 0; font-weight: 400; }
+        /* My places */
+        .places-list { display: flex; flex-direction: column; gap: 10px; }
+        .place-card { padding: 14px; display: flex; flex-direction: column; gap: 5px; }
+        .place-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 8px;
+        }
+        .place-name { font-size: 14px; font-weight: 700; color: var(--text); flex: 1; }
+        .place-rating { font-size: 12px; color: var(--yellow); letter-spacing: 1px; flex-shrink: 0; }
+        .place-menu { font-size: 13px; color: var(--primary); }
+        .place-comment { font-size: 12px; color: var(--text-sub); font-style: italic; }
+        .place-addr { font-size: 11px; color: var(--text-sub); }
+        .rating-badge {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          background: var(--bg);
+          padding: 2px 8px;
+          border-radius: var(--radius-full);
+          display: inline-block;
+          width: fit-content;
+        }
 
-        .friends-list { display: flex; flex-direction: column; gap: 12px; }
-        .friend-item { position: relative; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; color: var(--gray-900); background: var(--gray-50); padding: 12px 16px; border: none; border-radius: var(--radius-lg); transition: all 0.1s; }
-        .friend-item::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .friend-item:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
-        .friend-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--white); border: 2px solid var(--black); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: var(--gray-600); flex-shrink: 0; }
+        /* Empty */
+        .empty-card {
+          padding: 36px 16px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+        }
+        .empty-emoji { font-size: 2.5rem; }
+        .empty-title { font-size: 14px; font-weight: 700; color: var(--text); }
+        .empty-sub { font-size: 12px; color: var(--text-sub); }
+
+        /* Friends */
+        .friends-card { overflow: hidden; }
+        .friend-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 13px 16px;
+        }
+        .friend-row.divider { border-bottom: 1px solid var(--border-color); }
+        .friend-avatar {
+          width: 34px;
+          height: 34px;
+          border-radius: var(--radius-full);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--text);
+          flex-shrink: 0;
+        }
+        .friend-name { flex: 1; font-size: 14px; font-weight: 700; color: var(--text); }
+        .friend-tag {
+          font-size: 11px;
+          font-weight: 700;
+          background: var(--primary-light);
+          color: var(--primary);
+          padding: 2px 10px;
+          border-radius: var(--radius-full);
+        }
       `}</style>
     </div>
   );

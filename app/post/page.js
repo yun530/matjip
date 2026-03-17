@@ -1,258 +1,382 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getLocalUser } from "@/lib/userAuth";
 
+const ratingGuides = {
+  5: "최고야! 꼭 가봐 🙏",
+  4: "또 갈 의향 있음",
+  3: "낫배드, 한 번쯤",
+  2: "흠… 그냥 그럼",
+  1: "별로였어",
+};
+
 export default function PostPage() {
-  const [step, setStep] = useState(1); // 1: 장소 검색, 2: 리뷰 작성
+  const router = useRouter();
+  const [step, setStep] = useState(1);
   const [keyword, setKeyword] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [selectedPlace, setSelectedPlace] = useState(null);
-  
   const [rating, setRating] = useState(5);
   const [menu, setMenu] = useState("");
   const [comment, setComment] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const ratingGuides = {
-    5: "애드라 꼭가라🙏",
-    4: "또 갈 의향 잇음",
-    3: "낫밷 한 번쯤 ㄱㅊ",
-    2: "흠...그냥 그럼😐",
-    1: "개별로❌",
-  };
-
-  // 장소 검색 기능
   const searchPlaces = () => {
-    if (!keyword.replace(/^\s+|\s+$/g, "")) {
-      alert("키워드를 입력해주세요!");
+    if (!keyword.trim()) return;
+    if (!window.kakao?.maps?.services) {
+      alert("지도 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해 주세요.");
       return;
     }
-
-    if (!window.kakao || !window.kakao.maps || !window.kakao.maps.services) {
-      alert("지도 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
-      return;
-    }
-
     setIsSearching(true);
-    const ps = new window.kakao.maps.services.Places();
-
-    ps.keywordSearch(keyword, (data, status) => {
+    new window.kakao.maps.services.Places().keywordSearch(keyword, (data, status) => {
       setIsSearching(false);
-      if (status === window.kakao.maps.services.Status.OK) {
-        setSearchResults(data);
-      } else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
-        alert("검색 결과가 존재하지 않습니다.");
+      if (status === window.kakao.maps.services.Status.OK) setSearchResults(data);
+      else if (status === window.kakao.maps.services.Status.ZERO_RESULT) {
+        alert("검색 결과가 없습니다.");
         setSearchResults([]);
-      } else if (status === window.kakao.maps.services.Status.ERROR) {
-        alert("검색 결과 중 오류가 발생했습니다.");
+      } else {
+        alert("검색 중 오류가 발생했습니다.");
       }
     });
   };
 
-  const handleNext = () => {
-    if (step === 1 && !selectedPlace) {
-      alert("맛집을 먼저 선택해 주세요!");
-      return;
-    }
-    setStep(2);
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!selectedPlace || !comment || !menu) return;
-
+  const handleSubmit = async () => {
+    if (!selectedPlace || !menu || !comment) return;
+    setSubmitting(true);
     try {
-      const { data, error } = await supabase
-        .from('reviews')
-        .insert([
-          {
-            restaurant_name: selectedPlace.place_name,
-            address: selectedPlace.road_address_name || selectedPlace.address_name,
-            lat: parseFloat(selectedPlace.y),
-            lng: parseFloat(selectedPlace.x),
-            rating: rating,
-            menu: menu,
-            comment: comment,
-            user_id: getLocalUser()?.id || null,
-          }
-        ]);
-
+      const { error } = await supabase.from("reviews").insert([{
+        restaurant_name: selectedPlace.place_name,
+        address: selectedPlace.road_address_name || selectedPlace.address_name,
+        lat: parseFloat(selectedPlace.y),
+        lng: parseFloat(selectedPlace.x),
+        rating,
+        menu,
+        comment,
+        user_id: getLocalUser()?.id || null,
+      }]);
       if (error) throw error;
-
-      alert(`[${selectedPlace.place_name}] 등록되었습니다!`);
-      window.location.href = "/";
-    } catch (error) {
-      console.error('등록 실패:', error.message);
-      alert('맛집 등록에 실패했습니다. 다시 시도해 주세요.');
+      router.replace("/");
+    } catch {
+      alert("맛집 등록에 실패했습니다. 다시 시도해 주세요.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="post-container container">
-      <header className="post-header">
-        <h1>{step === 1 ? "➕ 어떤 맛집인가요?" : "✍️ 후기 작성"}</h1>
-        <p>{step === 1 ? "공유하고 싶은 식당을 검색해 보세요." : "친구들에게 알려줄 정보를 적어주세요."}</p>
-      </header>
-
-      <div className="step-indicator">
-        <div className={`step ${step === 1 ? "active" : "done"}`}>1</div>
-        <div className="line"></div>
-        <div className={`step ${step === 2 ? "active" : ""}`}>2</div>
+    <div className="page">
+      {/* 헤더 */}
+      <div className="page-header">
+        <div className="step-info">
+          <span className="step-num">STEP {step}/2</span>
+          <h1 className="step-title">{step === 1 ? "식당 검색" : "후기 작성"}</h1>
+        </div>
+        <div className="step-bar">
+          <div className={`step-seg ${step >= 1 ? "filled" : ""}`} />
+          <div className={`step-seg ${step >= 2 ? "filled" : ""}`} />
+        </div>
       </div>
 
       {step === 1 ? (
-        <div className="search-section">
-          <div className="search-input-wrapper">
-            <input 
-              type="text" 
-              placeholder="식당 이름을 입력하세요 (예: 우래옥)" 
-              className="search-input" 
+        /* ── STEP 1: 식당 검색 ── */
+        <div className="content">
+          <div className="search-row">
+            <input
+              className="px-input"
+              type="text"
+              placeholder="식당 이름 검색 (예: 우래옥)"
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && searchPlaces()}
+              onKeyDown={(e) => e.key === "Enter" && searchPlaces()}
+              style={{ flex: 1 }}
             />
             <button className="search-btn" onClick={searchPlaces} disabled={isSearching}>
-              {isSearching ? "..." : "🔍"}
+              {isSearching ? "…" : "검색"}
             </button>
           </div>
 
-          <div className="search-results">
-            {searchResults.length > 0 ? (
-              searchResults.map((place) => (
-                <div 
-                  key={place.id} 
-                  className={`result-item ${selectedPlace?.id === place.id ? "selected" : ""}`}
+          {searchResults.length === 0 ? (
+            <div className="no-result">
+              <span>🔍</span>
+              <p>검색 결과가 여기에 표시됩니다</p>
+            </div>
+          ) : (
+            <div className="results">
+              {searchResults.map((place) => (
+                <div
+                  key={place.id}
+                  className={`result-item card ${selectedPlace?.id === place.id ? "selected" : ""}`}
                   onClick={() => setSelectedPlace(place)}
                 >
-                  <div className="place-info">
-                    <span className="place-name">{place.place_name}</span>
-                    <span className="place-address">{place.road_address_name || place.address_name}</span>
+                  <div className="result-info">
+                    <span className="result-name">{place.place_name}</span>
+                    <span className="result-addr">
+                      {place.road_address_name || place.address_name}
+                    </span>
                   </div>
-                  {selectedPlace?.id === place.id && <span className="check-icon">✅</span>}
+                  {selectedPlace?.id === place.id && (
+                    <span className="check">✓</span>
+                  )}
                 </div>
-              ))
-            ) : (
-              <div className="no-results">검색 결과가 여기에 표시됩니다.</div>
-            )}
-          </div>
+              ))}
+            </div>
+          )}
 
-          <button className="next-btn" onClick={handleNext} disabled={!selectedPlace}>
-            다음 단계로
+          <button
+            className="next-btn"
+            onClick={() => {
+              if (!selectedPlace) { alert("식당을 선택해 주세요!"); return; }
+              setStep(2);
+            }}
+            disabled={!selectedPlace}
+          >
+            다음 →
           </button>
         </div>
       ) : (
-        <form className="review-form" onSubmit={handleSubmit}>
-          <div className="selected-place-card">
-            <span className="label">선택된 장소</span>
-            <h3>{selectedPlace.place_name}</h3>
-            <p>{selectedPlace.road_address_name || selectedPlace.address_name}</p>
-            <button type="button" className="edit-btn" onClick={() => setStep(1)}>변경</button>
+        /* ── STEP 2: 후기 작성 ── */
+        <div className="content">
+          {/* 선택된 식당 */}
+          <div className="selected-box card">
+            <div className="selected-top">
+              <span className="selected-tag">선택된 식당</span>
+              <button className="change-btn" onClick={() => setStep(1)}>변경</button>
+            </div>
+            <div className="selected-name">{selectedPlace.place_name}</div>
+            <div className="selected-addr">
+              {selectedPlace.road_address_name || selectedPlace.address_name}
+            </div>
           </div>
 
+          {/* 별점 */}
           <div className="form-group">
-            <label>별점 {rating}점</label>
-            <div className="rating-selector">
-              {[5, 4, 3, 2, 1].map((num) => (
-                <button 
-                  key={num} 
+            <label className="form-label">별점</label>
+            <div className="star-row">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
                   type="button"
-                  className={`rating-btn ${rating === num ? "active" : ""}`}
-                  onClick={() => setRating(num)}
+                  className={`star-btn ${rating >= n ? "on" : ""}`}
+                  onClick={() => setRating(n)}
                 >
-                  ⭐
+                  ★
                 </button>
               ))}
+              <span className="rating-guide">{ratingGuides[rating]}</span>
             </div>
-            <div className="rating-guide-text">{ratingGuides[rating]}</div>
           </div>
 
+          {/* 추천 메뉴 */}
           <div className="form-group">
-            <label htmlFor="menu">추천 메뉴 (태그)</label>
-            <input 
-              id="menu" 
-              type="text" 
-              placeholder="예: 평양냉면, 불고기" 
+            <label className="form-label" htmlFor="menu">추천 메뉴</label>
+            <input
+              id="menu"
+              className="px-input"
+              type="text"
+              placeholder="예: 곱창전골 강추!"
               value={menu}
               onChange={(e) => setMenu(e.target.value)}
-              required
             />
           </div>
 
+          {/* 한마디 */}
           <div className="form-group">
-            <label htmlFor="comment">한 줄 평</label>
-            <textarea 
-              id="comment" 
-              placeholder="어땠는지 꼬옥 써주면되..." 
+            <label className="form-label" htmlFor="comment">
+              한마디 <span className="char-hint">({comment.length}/100)</span>
+            </label>
+            <textarea
+              id="comment"
+              className="px-input"
+              placeholder="어땠는지 솔직하게 써줘!"
               value={comment}
+              maxLength={100}
               onChange={(e) => setComment(e.target.value)}
-              required
-            ></textarea>
+              style={{ height: "96px", resize: "none" }}
+            />
           </div>
 
-          <button type="submit" className="submit-btn" disabled={!comment || !menu}>
-            맛집 등록 완료
+          <button
+            className="next-btn"
+            onClick={handleSubmit}
+            disabled={!menu || !comment || submitting}
+          >
+            {submitting ? "등록 중…" : "맛집 등록 완료 ✓"}
           </button>
-        </form>
+        </div>
       )}
 
       <style jsx>{`
-        .post-container { padding-top: 24px; padding-bottom: 100px; max-width: 600px !important; }
-        .post-header { text-align: left; margin-bottom: 32px; }
-        .post-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
-        .post-header p { color: var(--gray-500); font-size: 1rem; }
+        .page {
+          max-width: var(--max-width);
+          margin: 0 auto;
+          padding-bottom: calc(var(--tab-height) + 16px);
+          min-height: 100vh;
+        }
 
-        .step-indicator { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
-        .step { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--gray-100); color: var(--gray-500); font-size: 1rem; transition: all 0.2s; border: 2.5px solid var(--gray-300); }
-        .step.active { background: var(--primary); color: white; border-color: var(--black); }
-        .step.done { background: var(--gray-300); color: white; border-color: var(--black); }
-        .line { width: 40px; height: 2.5px; background: var(--black); border-radius: 2px; }
+        /* Header */
+        .page-header {
+          background: var(--card-bg);
+          border-bottom: 1.5px solid var(--border-color);
+          padding: 20px 16px 16px;
+          margin-bottom: 16px;
+        }
+        .step-info { margin-bottom: 12px; }
+        .step-num {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .step-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: var(--text);
+          margin-top: 2px;
+        }
+        .step-bar { display: flex; gap: 6px; }
+        .step-seg {
+          flex: 1;
+          height: 4px;
+          background: var(--border-color);
+          border-radius: 2px;
+          transition: background 0.25s;
+        }
+        .step-seg.filled { background: var(--primary); }
 
-        .search-input-wrapper { display: flex; gap: 8px; margin-bottom: 24px; position: relative; }
-        .search-input { flex: 1; padding: 14px 16px 14px 44px; border-radius: var(--radius-lg); border: 2.5px solid var(--black); font-size: 1rem; font-weight: 500; background: white; transition: all 0.1s; outline: none; font-family: inherit; }
-        .search-input:focus { border-color: var(--primary); }
-        .search-input-wrapper::before { content: '🔍'; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; opacity: 0.5; }
-        .search-btn { display: none; }
+        /* Content */
+        .content {
+          padding: 0 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
 
-        .search-results { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; min-height: 200px; }
-        .no-results { display: flex; align-items: center; justify-content: center; height: 120px; color: var(--gray-400); font-size: 1rem; border: 2.5px dashed var(--gray-300); border-radius: var(--radius-lg); background: var(--gray-50); }
-        .result-item { position: relative; padding: 16px; background: white; border: none; border-radius: var(--radius-lg); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.1s; }
-        .result-item::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .result-item:hover { background: var(--gray-50); transform: translate(-1px, -1px); }
-        .result-item.selected { background: rgba(49,130,246,0.05); }
-        .place-name { display: block; font-weight: 700; font-size: 1.1rem; color: var(--gray-900); margin-bottom: 4px; }
-        .place-address { font-size: 0.9rem; color: var(--gray-500); font-weight: 400; }
-        .check-icon { font-size: 1.2rem; }
+        /* Search */
+        .search-row { display: flex; gap: 8px; }
+        .search-btn {
+          padding: 12px 18px;
+          background: var(--primary);
+          color: #fff;
+          border-radius: var(--radius-sm);
+          font-size: 14px;
+          font-weight: 700;
+          white-space: nowrap;
+          cursor: pointer;
+          font-family: inherit;
+          transition: opacity 0.1s;
+        }
+        .search-btn:disabled { background: var(--gray-300); cursor: not-allowed; }
 
-        .next-btn, .submit-btn { position: relative; width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.1s; font-family: inherit; }
-        .next-btn::before, .submit-btn::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .next-btn:hover:not(:disabled), .submit-btn:hover:not(:disabled) { transform: translate(-2px, -2px); }
-        .next-btn:active:not(:disabled), .submit-btn:active:not(:disabled) { transform: translate(3px, 3px); }
-        .next-btn:disabled, .submit-btn:disabled { background: var(--gray-200); color: var(--gray-400); cursor: not-allowed; }
+        .no-result {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          padding: 48px 0;
+          color: var(--text-sub);
+          font-size: 13px;
+        }
+        .no-result span { font-size: 2rem; }
 
-        .selected-place-card { position: relative; background: var(--gray-50); padding: 20px; border-radius: var(--radius-lg); border: none; margin-bottom: 32px; }
-        .selected-place-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .selected-place-card .label { font-size: 0.8rem; color: var(--primary); font-weight: 700; margin-bottom: 8px; display: inline-block; background: rgba(49,130,246,0.1); padding: 4px 10px; border-radius: var(--radius-full); }
-        .selected-place-card h3 { margin-bottom: 4px; color: var(--gray-900); font-size: 1.2rem; font-weight: 700; }
-        .selected-place-card p { font-size: 0.95rem; color: var(--gray-500); }
-        .edit-btn { position: absolute; top: 20px; right: 20px; font-size: 0.9rem; color: var(--gray-700); font-weight: 700; background: white; border: 2.5px solid var(--black); padding: 6px 12px; border-radius: var(--radius-md); transition: all 0.1s; font-family: inherit; cursor: pointer; }
-        .edit-btn:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
+        .results { display: flex; flex-direction: column; gap: 8px; }
+        .result-item {
+          padding: 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          cursor: pointer;
+          transition: background 0.1s;
+        }
+        .result-item:active { background: var(--bg); }
+        .result-item.selected { background: var(--primary-light); }
+        .result-info { display: flex; flex-direction: column; gap: 3px; }
+        .result-name { font-size: 14px; font-weight: 700; color: var(--text); }
+        .result-addr { font-size: 12px; color: var(--text-sub); }
+        .check { font-size: 18px; font-weight: 900; color: var(--primary); }
 
-        .form-group { margin-bottom: 28px; }
-        .form-group label { display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; color: var(--gray-800); }
-        .form-group input, .form-group textarea { width: 100%; padding: 14px 16px; border-radius: var(--radius-lg); border: 2.5px solid var(--black); font-size: 1rem; background: var(--gray-50); outline: none; transition: all 0.1s; color: var(--gray-900); font-family: inherit; box-sizing: border-box; }
-        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); background: white; }
-        .form-group textarea { height: 120px; resize: none; }
-        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--gray-400); }
+        /* Selected */
+        .selected-box { padding: 14px; }
+        .selected-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 6px;
+        }
+        .selected-tag {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+        .change-btn {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--primary);
+          background: var(--primary-light);
+          border-radius: var(--radius-full);
+          padding: 3px 10px;
+          cursor: pointer;
+          font-family: inherit;
+        }
+        .selected-name { font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+        .selected-addr { font-size: 12px; color: var(--text-sub); }
 
-        .rating-selector { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
-        .rating-btn { font-size: 2.2rem; filter: grayscale(1); opacity: 0.2; transition: all 0.2s; background: none; border: none; cursor: pointer; padding: 0; }
-        .rating-btn:hover { transform: scale(1.1); opacity: 0.5; }
-        .rating-btn.active, .rating-btn.active ~ .rating-btn { filter: grayscale(0); opacity: 1; transform: scale(1.05); }
-        .rating-guide-text { font-size: 0.95rem; font-weight: 700; color: var(--primary); border: 2.5px solid var(--primary); padding: 6px 14px; border-radius: var(--radius-lg); display: inline-block; }
+        /* Form */
+        .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .form-label { font-size: 13px; font-weight: 700; color: var(--text); }
+        .char-hint { font-weight: 400; color: var(--text-sub); }
 
-        .submit-btn { margin-top: 10px; }
+        /* Stars */
+        .star-row { display: flex; align-items: center; gap: 4px; }
+        .star-btn {
+          font-size: 2rem;
+          color: var(--border-color);
+          padding: 0;
+          line-height: 1;
+          cursor: pointer;
+          background: none;
+          border: none;
+          transition: color 0.1s, transform 0.1s;
+        }
+        .star-btn.on { color: var(--yellow); }
+        .star-btn:active { transform: scale(0.88); }
+        .rating-guide {
+          font-size: 13px;
+          font-weight: 500;
+          color: var(--text-sub);
+          margin-left: 6px;
+        }
+
+        /* CTA */
+        .next-btn {
+          width: 100%;
+          padding: 15px;
+          background: var(--primary);
+          color: #ffffff;
+          border: none;
+          border-radius: var(--radius-btn);
+          font-size: 15px;
+          font-weight: 700;
+          font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+          cursor: pointer;
+          margin-top: 4px;
+          transition: opacity 0.1s;
+        }
+        .next-btn:hover:not(:disabled) { opacity: 0.9; }
+        .next-btn:active:not(:disabled) { transform: scale(0.98); }
+        .next-btn:disabled {
+          background: var(--gray-300);
+          color: var(--gray-500);
+          cursor: not-allowed;
+          transform: none;
+        }
       `}</style>
     </div>
   );

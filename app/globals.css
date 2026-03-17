@@ -1,54 +1,66 @@
-@import url("https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Hahmlet:wght@400;600;700;900&display=swap");
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css");
 
 :root {
-  /* Hand-drawn palette — warm, slightly muted */
-  --primary: #3b82f6;
-  --primary-hover: #2563eb;
-  --secondary: #fef9ee;
-  --secondary-hover: #fdf0d0;
-  --accent: #ff6b6b;
+  /* Brand */
+  --primary: #FF6B35;
+  --primary-light: #FFF0EB;
+  --yellow: #FFD600;
+  --yellow-light: #FFFDE7;
 
-  /* Neutral scale */
-  --white: #fffef9;
-  --gray-50: #faf8f2;
-  --gray-100: #f2efe6;
-  --gray-200: #e2ddd0;
-  --gray-300: #ccc5b4;
-  --gray-400: #aaa394;
-  --gray-500: #8a8070;
-  --gray-600: #6b6356;
-  --gray-700: #4e483e;
-  --gray-800: #332e26;
-  --gray-900: #1a1610;
+  /* Surface */
+  --bg: #FFFBF5;
+  --card-bg: #FFFFFF;
+  --white: #FFFFFF;
 
-  --black: #1a1610;
+  /* Text */
+  --text: #1A0A00;
+  --text-sub: #999999;
+  --text-light: #CCCCCC;
 
-  /* UI Pin Logic Colors */
-  --pin-red: #ff3b30;
-  --pin-yellow: #ffcc00;
-  --pin-blue: #3b82f6;
+  /* Border */
+  --border-color: #F0E0CC;
+  --border: 1.5px solid #F0E0CC;
+  --border-thin: 1px solid #F0E0CC;
 
-  /* Layout Constants */
-  --max-width: 600px;
-  --header-height: 64px;
-  --radius-sm: 6px;
+  /* Layout */
+  --max-width: 390px;
+  --tab-height: 68px;
+  --dock-height: 68px;
+  --header-height: 56px;
+
+  /* Radius */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
   --radius-md: 10px;
   --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-card: 14px;
+  --radius-btn: 12px;
   --radius-full: 9999px;
 
-  /* Hand-drawn sketch shadows */
-  --shadow-sm: 2px 2px 0px var(--black);
-  --shadow-md: 4px 4px 0px var(--black);
-  --shadow-lg: 6px 6px 0px var(--black);
-  --shadow-float: 8px 8px 0px var(--black);
+  /* Shadow */
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.07);
+  --shadow-float: 0 8px 24px rgba(0, 0, 0, 0.12);
 
-  /* Sketch border */
-  --border-sketch: 2.5px solid var(--black);
-
-  /* Default */
-  --background: var(--gray-50);
-  --foreground: var(--gray-900);
+  /* Legacy aliases */
+  --black: #1A0A00;
+  --background: #FFFBF5;
+  --foreground: #1A0A00;
+  --gray-50: #FFFBF5;
+  --gray-100: #F5EEE5;
+  --gray-200: #EAE0D5;
+  --gray-300: #D9CDBE;
+  --gray-400: #BFBAB0;
+  --gray-500: #999999;
+  --gray-600: #777777;
+  --gray-700: #555555;
+  --gray-800: #333333;
+  --gray-900: #1A0A00;
+  --yellow2: #FF6B35;
+  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.10);
+  --border-sketch: 1.5px solid #F0E0CC;
+  --radius: var(--radius-md);
 }
 
 * {
@@ -61,14 +73,10 @@
 html, body {
   height: 100%;
   width: 100%;
-  background-color: var(--background);
-  background-image: url('/matjip/crooked_map_bg.png');
-  background-size: 400px;
-  background-repeat: repeat;
-  background-blend-mode: multiply;
-  color: var(--foreground);
-  font-family: "Gowun Dodum", sans-serif;
-  letter-spacing: -0.015em;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.02em;
 }
 
 body {
@@ -80,12 +88,9 @@ body {
 a {
   color: inherit;
   text-decoration: none;
-  transition: all 0.2s ease;
 }
 
-ul {
-  list-style: none;
-}
+ul { list-style: none; }
 
 button {
   cursor: pointer;
@@ -94,80 +99,94 @@ button {
   font-family: inherit;
 }
 
-/* Base Component Classes — Hand-drawn style */
+h1, h2, h3, h4, h5, h6 {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Card ── */
 .card {
-  position: relative;
-  background-color: var(--white);
-  border-radius: var(--radius-lg);
-  border: 2.5px solid var(--black);
-  transition: transform 0.1s ease;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
-.card:hover {
-  transform: translate(-2px, -2px);
+/* px-card is alias for card (legacy compat) */
+.px-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
 }
 
+/* ── Buttons ── */
 .btn-primary {
-  position: relative;
-  background-color: var(--primary);
-  color: var(--white);
-  border-radius: var(--radius-md);
-  border: 2.5px solid var(--black);
-  padding: 12px 20px;
-  font-weight: 800;
-  font-size: 1rem;
+  background: var(--primary);
+  color: #ffffff;
+  border-radius: var(--radius-btn);
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform 0.1s ease;
+  transition: opacity 0.1s;
 }
-
-.btn-primary:hover {
-  transform: translate(-2px, -2px);
-}
-
-.btn-primary:active {
-  transform: translate(3px, 3px);
-}
+.btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+.btn-primary:disabled { background: var(--gray-300); color: var(--gray-500); cursor: not-allowed; transform: none; }
 
 .btn-secondary {
-  position: relative;
-  background-color: var(--secondary);
-  color: var(--gray-800);
-  border-radius: var(--radius-md);
-  border: 2.5px solid var(--black);
-  padding: 12px 20px;
-  font-weight: 800;
-  font-size: 1rem;
+  background: #ffffff;
+  color: var(--primary);
+  border: 1.5px solid var(--primary);
+  border-radius: var(--radius-btn);
+  padding: 14px 20px;
+  font-weight: 700;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: transform 0.1s ease;
 }
 
-.btn-secondary:hover {
-  transform: translate(-2px, -2px);
+/* ── Input ── */
+input, textarea {
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s;
 }
+input:focus, textarea:focus { border-color: var(--primary); }
+input::placeholder, textarea::placeholder { color: var(--text-light); }
 
-.btn-secondary:active {
-  transform: translate(2px, 2px);
-  box-shadow: none;
+/* .px-input for inline use */
+.px-input {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1.5px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 14px;
+  color: var(--text);
+  outline: none;
+  font-family: Pretendard, -apple-system, BlinkMacSystemFont, sans-serif;
+  transition: border-color 0.15s;
 }
+.px-input:focus { border-color: var(--primary); }
+.px-input::placeholder { color: var(--text-light); }
 
-/* Hahmlet — 제목, 카테고리 등에 사용 */
-h1, h2, h3, h4, h5, h6 {
-  font-family: "Hahmlet", serif;
-}
-
-.font-title {
-  font-family: "Hahmlet", serif;
-}
-
-/* Common Layout Classes */
+/* ── Layout ── */
 .container {
   max-width: var(--max-width);
   margin: 0 auto;
-  padding: 0 20px;
+  padding: 0 16px;
 }

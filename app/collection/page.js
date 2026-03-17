@@ -16,11 +16,8 @@ export default function CollectionPage() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem("zzp_saved_places");
-      const arr = raw ? JSON.parse(raw) : [];
-      setSaved(arr.reverse()); // 최신순
-    } catch {
-      setSaved([]);
-    }
+      setSaved(raw ? JSON.parse(raw).reverse() : []);
+    } catch { setSaved([]); }
   }, []);
 
   const removeSave = (key) => {
@@ -30,119 +27,110 @@ export default function CollectionPage() {
   };
 
   return (
-    <div className="collection-container container">
-      <header className="page-header">
-        <h1>💾 저장한 맛집</h1>
-        <p>나중에 가보고 싶은 맛집 모음</p>
-      </header>
+    <div className="page">
+      {/* 헤더 */}
+      <div className="page-header px-card">
+        <span className="header-icon">🔖</span>
+        <div>
+          <p className="header-label">▶ 내 저장 목록</p>
+          <h1 className="header-title">저장한 맛집</h1>
+        </div>
+        {saved.length > 0 && <span className="count-badge">{saved.length}</span>}
+      </div>
 
       {saved.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon">🍽</div>
-          <p className="empty-title">아직 저장한 맛집이 없어요</p>
-          <p className="empty-sub">지도에서 맛집을 발견하면 🔖 저장 버튼을 눌러보세요!</p>
-          <Link href="/" className="go-map-btn">지도 보러 가기</Link>
+        <div className="empty-box px-card">
+          <p className="empty-icon">📂</p>
+          <p className="empty-title">저장한 맛집이 없어요</p>
+          <p className="empty-desc">지도에서 맛집을 발견하면 저장 버튼을 눌러보세요!</p>
+          <Link href="/map" className="goto-btn">지도 보러 가기 ▶</Link>
         </div>
       ) : (
-        <>
-          <div className="save-count">{saved.length}개 저장됨</div>
-          <div className="card-list">
-            {saved.map((place) => (
-              <div key={place.key} className="place-card">
-                <div className="card-main">
-                  <div className="card-info">
-                    <h2 className="card-name">{place.restaurant_name}</h2>
-                    <p className="card-address">{place.address}</p>
-                    <div className="card-tags">
-                      <span className="tag recommend">추천 {place.count}명</span>
-                      {place.reviews?.slice(0, 2).map((r, i) => (
-                        <span key={i} className="tag menu">🍴 {r.menu}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="card-actions">
-                    <span className="saved-date">{formatDate(place.saved_at)}</span>
-                    <button
-                      className="toggle-btn"
-                      onClick={() => setExpanded(expanded === place.key ? null : place.key)}
-                    >
-                      {expanded === place.key ? "▲" : "▼"}
-                    </button>
-                    <button className="remove-btn" onClick={() => removeSave(place.key)}>✕</button>
-                  </div>
-                </div>
-
-                {expanded === place.key && place.reviews?.length > 0 && (
-                  <div className="review-section">
-                    <div className="review-divider" />
-                    {place.reviews.map((r, i) => (
-                      <div key={i} className="mini-review">
-                        <div className="mini-top">
-                          <div className="mini-avatar">{(r.nickname || "?")[0]}</div>
-                          <div>
-                            <span className="mini-name">{r.nickname}</span>
-                            <span className="mini-rating">{"⭐".repeat(r.rating)}</span>
-                          </div>
-                        </div>
-                        <div className="mini-menu">🍽 {r.menu}</div>
-                        <p className="mini-comment">{r.comment}</p>
-                      </div>
+        <div className="card-list">
+          {saved.map((place) => (
+            <div key={place.key} className="place-card px-card">
+              <div className="card-main">
+                <div className="card-left">
+                  <h2 className="card-name">{place.restaurant_name}</h2>
+                  <p className="card-addr">{place.address}</p>
+                  <div className="tag-row">
+                    <span className="tag yellow">추천 {place.count}명</span>
+                    {place.reviews?.slice(0, 2).map((r, i) => (
+                      <span key={i} className="tag">▸ {r.menu}</span>
                     ))}
                   </div>
-                )}
+                </div>
+                <div className="card-right">
+                  <span className="save-date">{formatDate(place.saved_at)}</span>
+                  <button className="icon-btn" onClick={() => setExpanded(expanded === place.key ? null : place.key)}>
+                    {expanded === place.key ? "▲" : "▼"}
+                  </button>
+                  <button className="icon-btn del" onClick={() => removeSave(place.key)}>✕</button>
+                </div>
               </div>
-            ))}
-          </div>
-        </>
+
+              {expanded === place.key && place.reviews?.length > 0 && (
+                <div className="reviews-expand">
+                  <div className="expand-divider" />
+                  {place.reviews.map((r, i) => (
+                    <div key={i} className="mini-review">
+                      <div className="mini-top">
+                        <span className="mini-avatar">{(r.nickname || "?")[0]}</span>
+                        <span className="mini-name">{r.nickname}</span>
+                        <span className="mini-stars">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                      </div>
+                      <p className="mini-menu">▸ {r.menu}</p>
+                      <p className="mini-comment">{r.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       )}
 
       <style jsx>{`
-        .collection-container { padding-top: 24px; padding-bottom: 100px; max-width: 600px !important; }
-        .page-header { margin-bottom: 24px; }
-        .page-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
-        .page-header p { color: var(--gray-500); font-size: 1rem; }
+        .page { padding: 16px 16px calc(var(--dock-height) + 16px); max-width: 600px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
 
-        .save-count { font-size: 0.95rem; font-weight: 700; color: var(--gray-600); margin-bottom: 16px; }
+        .page-header { padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+        .header-icon { font-size: 1.8rem; }
+        .header-label { font-size: 0.68rem; font-weight: 900; color: var(--gray-500); margin-bottom: 2px; }
+        .header-title { font-size: 1.2rem; }
+        .count-badge { margin-left: auto; background: var(--black); color: var(--white); font-family: "Black Han Sans", sans-serif; font-size: 0.9rem; padding: 4px 10px; border-radius: var(--radius-full); border: var(--border-thin); }
 
-        .card-list { display: flex; flex-direction: column; gap: 16px; }
+        .empty-box { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 48px 20px; text-align: center; }
+        .empty-icon { font-size: 3rem; }
+        .empty-title { font-family: "Black Han Sans", sans-serif; font-size: 1rem; }
+        .empty-desc { font-size: 0.8rem; color: var(--gray-500); line-height: 1.5; }
+        .goto-btn { margin-top: 8px; padding: 10px 20px; background: var(--black); color: var(--white); border: var(--border); border-radius: var(--radius-sm); font-family: "Black Han Sans", sans-serif; font-size: 0.9rem; }
 
-        .place-card { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); transition: transform 0.1s; }
-        .place-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; z-index: 1; }
-        .place-card:hover { transform: translate(-2px, -2px); }
+        .card-list { display: flex; flex-direction: column; gap: 10px; }
 
-        .card-main { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; gap: 12px; }
-        .card-info { flex: 1; min-width: 0; }
-        .card-name { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-address { font-size: 0.9rem; color: var(--gray-500); font-weight: 400; margin: 0 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .card-tags { display: flex; flex-wrap: wrap; gap: 8px; }
-        .tag { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--gray-100); color: var(--gray-700); border: 1.5px solid var(--gray-300); }
-        .tag.recommend { background: rgba(49,130,246,0.08); color: var(--primary); border-color: var(--primary); }
+        .place-card { overflow: hidden; }
+        .card-main { padding: 14px 16px; display: flex; gap: 10px; }
+        .card-left { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+        .card-name { font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-addr { font-size: 0.72rem; color: var(--gray-500); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .tag-row { display: flex; flex-wrap: wrap; gap: 5px; }
+        .tag { font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border: var(--border-thin); border-radius: var(--radius-full); background: var(--gray-100); }
+        .tag.yellow { background: var(--yellow); }
 
-        .card-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex-shrink: 0; }
-        .saved-date { font-size: 0.8rem; font-weight: 500; color: var(--gray-400); }
-        .actions-row { display: flex; gap: 8px; }
-        .toggle-btn, .remove-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--black); background: var(--gray-100); color: var(--gray-600); font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; font-family: inherit; }
-        .toggle-btn:hover { background: var(--gray-200); transform: translate(-1px, -1px); }
-        .remove-btn:hover { background: rgba(255,59,48,0.1); color: var(--pin-red); transform: translate(-1px, -1px); }
+        .card-right { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0; }
+        .save-date { font-size: 0.68rem; color: var(--gray-400); }
+        .icon-btn { width: 30px; height: 30px; border: var(--border-thin); border-radius: var(--radius-sm); background: var(--gray-100); font-size: 0.75rem; font-weight: 900; cursor: pointer; display: flex; align-items: center; justify-content: center; font-family: inherit; }
+        .icon-btn.del:hover { background: #fee; color: #c00; border-color: #c00; }
 
-        .review-divider { height: 2px; background: var(--black); margin: 0; }
-        .review-section { background: var(--gray-50); display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }
-        .mini-review { position: relative; background: var(--white); border: none; border-radius: var(--radius-lg); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
-        .mini-review::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .mini-top { display: flex; align-items: center; gap: 10px; }
-        .mini-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); color: var(--gray-600); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; border: 2px solid var(--black); }
-        .mini-name { font-weight: 700; font-size: 0.95rem; display: block; color: var(--gray-900); }
-        .mini-rating { font-size: 0.75rem; }
-        .mini-menu { font-size: 0.85rem; color: var(--primary); font-weight: 700; display: inline-block; background: rgba(49,130,246,0.05); padding: 4px 8px; border-radius: var(--radius-sm); margin-right: auto; border: 1.5px solid var(--primary); }
-        .mini-comment { font-size: 0.95rem; color: var(--gray-700); margin: 0; line-height: 1.5; }
-
-        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 12px; border: 2.5px dashed var(--black); border-radius: var(--radius-xl); background: var(--gray-50); text-align: center; }
-        .empty-icon { font-size: 3rem; margin-bottom: 8px; opacity: 0.5; }
-        .empty-title { font-size: 1.2rem; font-weight: 700; color: var(--gray-700); margin: 0; }
-        .empty-sub { font-size: 0.95rem; font-weight: 400; color: var(--gray-500); margin: 0; line-height: 1.5; }
-        .go-map-btn { position: relative; margin-top: 16px; padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 700; transition: all 0.1s; display: inline-block; }
-        .go-map-btn::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
-        .go-map-btn:hover { transform: translate(-2px, -2px); }
+        .reviews-expand { background: var(--gray-50); }
+        .expand-divider { height: 3px; background: var(--black); }
+        .mini-review { padding: 12px 16px; border-bottom: 2px solid var(--gray-200); display: flex; flex-direction: column; gap: 5px; }
+        .mini-review:last-child { border-bottom: none; }
+        .mini-top { display: flex; align-items: center; gap: 8px; }
+        .mini-avatar { width: 26px; height: 26px; background: var(--black); color: var(--white); border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 900; flex-shrink: 0; font-family: "Black Han Sans", sans-serif; }
+        .mini-name { font-size: 0.8rem; font-weight: 900; }
+        .mini-stars { font-size: 0.7rem; color: var(--yellow2); margin-left: auto; }
+        .mini-menu { font-size: 0.75rem; color: var(--gray-600); }
+        .mini-comment { font-size: 0.78rem; color: var(--gray-700); font-style: italic; }
       `}</style>
     </div>
   );

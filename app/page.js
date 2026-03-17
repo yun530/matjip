@@ -1,437 +1,311 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { getLocalUser, getFollowingIds } from "@/lib/userAuth";
 
-export default function Home() {
-  const mapRef = useRef(null);
-  const containerRef = useRef(null);
-  const [mapStatus, setMapStatus] = useState("loading");
-  const [errorMessage, setErrorMessage] = useState("");
-  const [selectedPlace, setSelectedPlace] = useState(null);
-  const setSelectedPlaceRef = useRef(null);
-  setSelectedPlaceRef.current = setSelectedPlace;
-  const [savedKeys, setSavedKeys] = useState(() => {
-    if (typeof window === "undefined") return new Set();
+const RATING_LABELS = { 1: "별로", 2: "그냥그래", 3: "괜찮아", 4: "맛있어", 5: "최고야!" };
+const AVATAR_COLORS = ["#FFD600", "#FF6B35", "#4ECDC4", "#A8E6CF", "#FFB7B2", "#C7CEEA", "#FFEAA7", "#DDA0DD"];
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const min = Math.floor(diff / 60000);
+  if (min < 1) return "방금";
+  if (min < 60) return `${min}분 전`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}시간 전`;
+  return `${Math.floor(hr / 24)}일 전`;
+}
+
+function getAvatarColor(str) {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+export default function HomePage() {
+  const router = useRouter();
+  const [recent, setRecent] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  useEffect(() => {
+    const user = getLocalUser();
+    setCurrentUser(user);
+    if (user) loadData(user);
+    else setLoading(false);
+  }, []);
+
+  const loadData = async (user) => {
+    setLoading(true);
     try {
-      const raw = localStorage.getItem("zzp_saved_places");
-      const arr = raw ? JSON.parse(raw) : [];
-      return new Set(arr.map((p) => p.key));
-    } catch { return new Set(); }
-  });
+      const followingIds = await getFollowingIds(user.id);
+      const visibleIds = [user.id, ...followingIds];
 
-  const toggleSave = (place) => {
-    const key = `${place.lat}_${place.lng}`;
-    const raw = localStorage.getItem("zzp_saved_places");
-    const arr = raw ? JSON.parse(raw) : [];
+      const [{ data: reviews }, { data: friendUsers }] = await Promise.all([
+        supabase
+          .from("reviews")
+          .select("*, users(nickname)")
+          .in("user_id", visibleIds)
+          .order("created_at", { ascending: false })
+          .limit(30),
+        supabase.from("users").select("id, nickname").in("id", followingIds),
+      ]);
 
-    if (savedKeys.has(key)) {
-      const updated = arr.filter((p) => p.key !== key);
-      localStorage.setItem("zzp_saved_places", JSON.stringify(updated));
-      setSavedKeys((prev) => { const s = new Set(prev); s.delete(key); return s; });
-    } else {
-      const entry = {
-        key,
-        restaurant_name: place.restaurant_name,
-        address: place.address,
-        lat: place.lat,
-        lng: place.lng,
-        count: place.count,
-        reviews: place.reviews.map((r) => ({
-          nickname: r.users?.nickname || "알 수 없음",
-          rating: r.rating,
-          menu: r.menu,
-          comment: r.comment,
-        })),
-        saved_at: new Date().toISOString(),
-      };
-      localStorage.setItem("zzp_saved_places", JSON.stringify([...arr, entry]));
-      setSavedKeys((prev) => new Set([...prev, key]));
+      setRecent((reviews || []).slice(0, 3));
+
+      const countMap = {};
+      (reviews || []).forEach((r) => {
+        if (followingIds.includes(r.user_id)) {
+          countMap[r.user_id] = (countMap[r.user_id] || 0) + 1;
+        }
+      });
+      setFriends(
+        (friendUsers || []).map((f) => ({ ...f, count: countMap[f.id] || 0 }))
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
-  useEffect(() => {
-    let isMounted = true;
-
-    const startMap = () => {
-      if (!window.kakao || !window.kakao.maps) return;
-
-      window.kakao.maps.load(() => {
-        if (!isMounted || mapRef.current) return;
-        
-        const container = containerRef.current;
-        if (!container) return;
-
-        const options = {
-          center: new window.kakao.maps.LatLng(37.5665, 126.9780),
-          level: 4,
-        };
-
-        const map = new window.kakao.maps.Map(container, options);
-        mapRef.current = map;
-
-        // --- 실시간 데이터 로드 및 시각화 ---
-        const fetchAndDisplayReviews = async () => {
-          const localUser = getLocalUser();
-          let query = supabase.from('reviews').select('*, users(nickname)');
-
-          if (localUser) {
-            const followingIds = await getFollowingIds(localUser.id);
-            const visibleIds = [localUser.id, ...followingIds];
-            query = query.in('user_id', visibleIds);
-          }
-
-          const { data: reviews, error } = await query;
-
-          if (error) {
-            console.error('리뷰 불러오기 실패:', error);
-            return;
-          }
-
-          // 1. 같은 장소끼리 그룹화 (추천 수 계산)
-          const placeGroups = reviews.reduce((acc, curr) => {
-            const key = `${curr.lat}_${curr.lng}`;
-            if (!acc[key]) {
-              acc[key] = { ...curr, count: 0, reviews: [] };
-            }
-            acc[key].count += 1;
-            acc[key].reviews.push(curr);
-            return acc;
-          }, {});
-
-          // 전역 콜백 등록 (CustomOverlay onclick에서 React state 접근)
-          window.__zzp_selectPlace = (key) => {
-            setSelectedPlaceRef.current(placeGroups[key]);
-          };
-
-          // 2. 지도에 핀 표시
-          Object.values(placeGroups).forEach((place) => {
-            const position = new window.kakao.maps.LatLng(place.lat, place.lng);
-            const key = `${place.lat}_${place.lng}`;
-
-            // 기획: 🔴 5+명, 🟡 3+명, 🔵 1+명
-            let pinColor = "#3b82f6";
-            if (place.count >= 5) pinColor = "#ff3b30";
-            else if (place.count >= 3) pinColor = "#ffcc00";
-
-            const textColor = pinColor === "#ffcc00" ? "#1a1610" : "white";
-
-            const content = `
-              <div onclick="window.__zzp_selectPlace('${key}')" style="cursor:pointer; filter: drop-shadow(2px 2px 0px #1a1610);">
-                <svg width="42" height="54" viewBox="0 0 42 54" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M21 3 C13 3 4 10 4 20 C4 27 9 35 16 43 C18 46 20 49 21 52 C22 49 24 46 26 43 C33 35 38 27 38 20 C38 10 29 3 21 3 Z"
-                        fill="${pinColor}" stroke="#1a1610" stroke-width="2.5" stroke-linejoin="round"/>
-                  <circle cx="21" cy="19" r="8.5" fill="white" stroke="#1a1610" stroke-width="2"/>
-                  <text x="21" y="24" text-anchor="middle" fill="#1a1610" font-size="11" font-weight="900" font-family="Gowun Dodum, sans-serif">${place.count}</text>
-                </svg>
-              </div>
-            `;
-
-            new window.kakao.maps.CustomOverlay({
-              position: position,
-              content: content,
-              map: map,
-              yAnchor: 1.2
-            });
-          });
-        };
-
-        fetchAndDisplayReviews();
-
-        // 현위치 표시
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition((pos) => {
-            const lat = pos.coords.latitude;
-            const lng = pos.coords.longitude;
-            const locPosition = new window.kakao.maps.LatLng(lat, lng);
-            map.setCenter(locPosition);
-            
-            new window.kakao.maps.Circle({
-              center: locPosition,
-              radius: 20,
-              strokeWeight: 0,
-              fillColor: '#4285F4',
-              fillOpacity: 0.5,
-              map: map
-            });
-          });
-        }
-        
-        setMapStatus("success");
-      });
-    };
-
-    if (window.kakao && window.kakao.maps) {
-      startMap();
-    }
-
-    const handleSdkLoad = () => startMap();
-    window.addEventListener("kakao-sdk-loaded", handleSdkLoad);
-
-    const timeout = setTimeout(() => {
-      if (isMounted && !mapRef.current) {
-        startMap();
-        setTimeout(() => {
-          if (isMounted && !mapRef.current) {
-            setMapStatus("error");
-            setErrorMessage("지도를 불러오는 데 실패했습니다.");
-          }
-        }, 2000);
-      }
-    }, 5000);
-
-    return () => {
-      isMounted = false;
-      window.removeEventListener("kakao-sdk-loaded", handleSdkLoad);
-      clearTimeout(timeout);
-    };
-  }, [mapStatus]);
-
   return (
-    <div className="map-view-container">
-      {mapStatus === "loading" && (
-        <div className="map-overlay">
-          <div className="spinner"></div>
-          <p>친구들의 맛집을 찾는 중...</p>
-        </div>
-      )}
+    <div className="page">
+      {/* 앱 헤더 */}
+      <div className="app-header">
+        <span className="app-title">🗺️ 쩝쩝박사지도</span>
+        {currentUser && (
+          <span className="greeting">안녕하세요, {currentUser.nickname}님</span>
+        )}
+      </div>
 
-      {mapStatus === "error" && (
-        <div className="map-overlay error">
-          <span className="error-icon">⚠️</span>
-          <p>{errorMessage}</p>
-          <button className="retry-btn" onClick={() => window.location.reload()}>다시 시도</button>
-        </div>
-      )}
-      
-      <div 
-        ref={containerRef} 
-        className="kakao-map" 
-        style={{ visibility: mapStatus === "success" ? "visible" : "hidden" }}
-      ></div>
-
-      {/* 장소 상세 모달 */}
-      {selectedPlace && (
-        <div className="modal-backdrop" onClick={() => setSelectedPlace(null)}>
-          <div className="place-modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedPlace(null)}>✕</button>
-            <div className="modal-header">
-              <h2>{selectedPlace.restaurant_name}</h2>
-              <p className="modal-address">{selectedPlace.address}</p>
-              <div className="modal-meta">
-                <span className="modal-count">추천 {selectedPlace.count}명</span>
-                <button
-                  className={`save-btn ${savedKeys.has(`${selectedPlace.lat}_${selectedPlace.lng}`) ? "saved" : ""}`}
-                  onClick={() => toggleSave(selectedPlace)}
-                >
-                  {savedKeys.has(`${selectedPlace.lat}_${selectedPlace.lng}`) ? "💾 저장됨" : "🔖 저장"}
-                </button>
-              </div>
-            </div>
-            <div className="review-list">
-              {selectedPlace.reviews.map((review, i) => (
-                <div key={i} className="review-card">
-                  <div className="review-top">
-                    <div className="reviewer-avatar">{(review.users?.nickname || "?")[0]}</div>
-                    <div>
-                      <span className="reviewer-name">{review.users?.nickname || "알 수 없음"}</span>
-                      <span className="review-rating">{"⭐".repeat(review.rating)}</span>
-                    </div>
-                  </div>
-                  <div className="review-menu">🍽 {review.menu}</div>
-                  <p className="review-comment">{review.comment}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {mapStatus === "success" && (
+      {loading ? (
+        <div className="loading">불러오는 중…</div>
+      ) : (
         <>
-          <div className="search-container mobile-only">
-            <div className="search-bar">
-              <span className="search-icon">🔍</span>
-              <input type="text" placeholder="친구들의 추천 맛집 검색" readOnly />
-            </div>
-          </div>
-          
-          <div className="map-legend mobile-only">
-            <div className="legend-item"><span className="dot red"></span> 5+명 추천</div>
-            <div className="legend-item"><span className="dot yellow"></span> 3+명 추천</div>
-            <div className="legend-item"><span className="dot blue"></span> 1+명 추천</div>
-          </div>
+          {/* 최근 맛집 */}
+          <section className="section">
+            <div className="section-label">최근 추천</div>
+            {recent.length === 0 ? (
+              <div className="empty-card card">
+                <span className="empty-emoji">📭</span>
+                <p className="empty-title">아직 맛집이 없어요</p>
+                <p className="empty-sub">첫 번째 맛집을 등록해 보세요!</p>
+              </div>
+            ) : (
+              <div className="recent-list">
+                {recent.map((r) => (
+                  <div key={r.id} className="review-card card">
+                    <div className="card-top">
+                      <span className="recommender">{r.users?.nickname || "??"}</span>
+                      {r.rating && (
+                        <span className="rating-badge">
+                          {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
+                        </span>
+                      )}
+                      <span className="time">{timeAgo(r.created_at)}</span>
+                    </div>
+                    <div className="restaurant-name">{r.restaurant_name}</div>
+                    {r.menu && <div className="menu-tag">{r.menu}</div>}
+                    {r.comment && <div className="comment">"{r.comment}"</div>}
+                    {r.rating && (
+                      <div className="rating-label">{RATING_LABELS[r.rating]}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
 
-          <div className="fab-group">
-            <button className="fab-btn location-btn" onClick={() => window.location.reload()}>📍</button>
-          </div>
+          {/* 친구 목록 */}
+          <section className="section">
+            <div className="section-label">친구들</div>
+            {friends.length === 0 ? (
+              <div className="empty-card card">
+                <span className="empty-emoji">🫂</span>
+                <p className="empty-title">아직 친구가 없어요</p>
+                <p className="empty-sub">프로필에서 초대 링크를 공유해 보세요!</p>
+              </div>
+            ) : (
+              <div className="friends-list card">
+                {friends.map((friend, idx) => (
+                  <button
+                    key={friend.id}
+                    className={`friend-row ${idx < friends.length - 1 ? "divider" : ""}`}
+                    onClick={() => router.push(`/map?friend=${friend.id}`)}
+                  >
+                    <div
+                      className="friend-avatar"
+                      style={{ background: getAvatarColor(friend.id) }}
+                    >
+                      {friend.nickname[0]}
+                    </div>
+                    <div className="friend-info">
+                      <div className="friend-name">{friend.nickname}</div>
+                      <div className="friend-count">맛집 {friend.count}곳</div>
+                    </div>
+                    <span className="friend-arrow">›</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
         </>
       )}
 
-      <style jsx global>{`
-        .custom-pin:hover { transform: scale(1.15); z-index: 10; }
-        .custom-pin:active { transform: scale(0.95); }
-      `}</style>
-
       <style jsx>{`
-        .map-view-container {
-          position: fixed;
-          top: 0; left: 0; right: 0; bottom: 60px;
-          background: #f8f9fa;
+        .page {
+          max-width: var(--max-width);
+          margin: 0 auto;
+          padding-bottom: calc(var(--tab-height) + 16px);
+          min-height: 100vh;
         }
-        @media (min-width: 769px) {
-          .map-view-container { top: var(--header-height); bottom: 0; }
-        }
-        .kakao-map { width: 100%; height: 100%; }
-        .map-overlay {
-          position: absolute; inset: 0; z-index: 2000;
-          background-color: rgba(255, 255, 255, 0.85);
-          background-image: url('/matjip/crooked_map_bg.png');
-          background-size: 400px;
-          background-repeat: repeat;
-          background-blend-mode: multiply;
-          backdrop-filter: blur(2px);
-          -webkit-backdrop-filter: blur(2px);
-          display: flex; flex-direction: column;
-          align-items: center; justify-content: center; gap: 16px;
-        }
-        .spinner {
-          width: 36px; height: 36px;
-          border: 3px solid var(--gray-200);
-          border-left-color: var(--primary);
-          border-radius: 50%;
-          animation: spin 1s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
 
-        .search-container {
-          position: absolute; top: env(safe-area-inset-top, 24px);
-          left: 16px; right: 16px; z-index: 1000;
+        .app-header {
+          padding: 20px 16px 16px;
+          background: var(--card-bg);
+          border-bottom: 1.5px solid var(--border-color);
+          margin-bottom: 20px;
+          display: flex;
+          align-items: baseline;
+          gap: 10px;
         }
-        .search-bar {
-          background: var(--white); padding: 14px 16px; border-radius: var(--radius-full);
-          border: 2.5px solid var(--black);
-          display: flex; align-items: center; gap: 12px;
-          transition: border-color 0.1s;
+        .app-title {
+          font-size: 18px;
+          font-weight: 900;
+          color: var(--text);
         }
-        .search-bar:focus-within {
-          border-color: var(--primary);
+        .greeting {
+          font-size: 12px;
+          color: var(--text-sub);
         }
-        .search-bar input { border: none; outline: none; width: 100%; font-size: 1rem; color: var(--gray-900); font-family: inherit; font-weight: 500; }
-        .search-bar input::placeholder { color: var(--gray-400); }
 
-        .map-legend {
-          position: absolute; top: 90px; left: 16px;
-          background: rgba(255, 255, 255, 0.95);
-          backdrop-filter: blur(8px);
-          -webkit-backdrop-filter: blur(8px);
-          border: 2.5px solid var(--black);
-          padding: 12px 16px; border-radius: var(--radius-lg); z-index: 1000;
-          display: flex; flex-direction: column; gap: 8px;
-          font-size: 0.85rem; font-family: inherit;
+        .loading {
+          text-align: center;
+          padding: 60px 0;
+          color: var(--text-sub);
+          font-size: 14px;
         }
-        .legend-item { display: flex; align-items: center; gap: 8px; font-weight: 500; color: var(--gray-700); }
-        .dot { width: 10px; height: 10px; border-radius: 50%; }
-        .dot.red { background: var(--pin-red); }
-        .dot.yellow { background: var(--pin-yellow); }
-        .dot.blue { background: var(--pin-blue); }
 
-        .fab-group { position: absolute; right: 16px; bottom: 24px; z-index: 1000; }
-        .fab-btn {
-          width: 52px; height: 52px; border-radius: 50%;
-          background: var(--white);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 1.4rem; border: 2.5px solid var(--black);
-          transition: all 0.2s ease;
-          color: var(--gray-700);
+        .section {
+          padding: 0 16px;
+          margin-bottom: 24px;
         }
-        .fab-btn:active { transform: scale(0.92); }
+        .section-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        }
 
-        /* 모달 */
-        .modal-backdrop {
-          position: fixed; inset: 0; z-index: 3000;
-          background: rgba(0,0,0,0.4);
-          backdrop-filter: blur(2px);
-          -webkit-backdrop-filter: blur(2px);
-          display: flex; align-items: flex-end;
-          animation: fadeIn 0.2s ease-out forwards;
+        /* Empty state */
+        .empty-card {
+          padding: 36px 16px;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
         }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .place-modal {
-          width: 100%; max-height: 85vh;
-          background: var(--white); 
-          border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-          padding: 24px 24px calc(24px + env(safe-area-inset-bottom)); 
-          overflow-y: auto;
-          display: flex; flex-direction: column; gap: 20px;
-          position: relative; border-top: 2.5px solid var(--black);
-          animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        .empty-emoji { font-size: 2.5rem; }
+        .empty-title { font-size: 14px; font-weight: 700; color: var(--text); }
+        .empty-sub { font-size: 12px; color: var(--text-sub); }
+
+        /* Recent cards */
+        .recent-list { display: flex; flex-direction: column; gap: 10px; }
+
+        .review-card { padding: 14px; }
+
+        .card-top {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 8px;
+          flex-wrap: wrap;
         }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-        
-        @media (min-width: 769px) {
-          .modal-backdrop { align-items: center; justify-content: center; }
-          .place-modal { 
-            max-width: 440px; border-radius: var(--radius-xl); 
-            max-height: 80vh; padding: 24px;
-            animation: zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-          }
-          @keyframes zoomIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        .recommender {
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--primary);
+          background: var(--primary-light);
+          padding: 2px 10px;
+          border-radius: var(--radius-full);
         }
-        
-        .modal-close {
-          position: absolute; top: 20px; right: 20px;
-          background: var(--gray-100); border: none; 
-          border-radius: 50%; color: var(--gray-600);
-          width: 32px; height: 32px; font-size: 1.1rem;
-          cursor: pointer; display: flex; align-items: center; justify-content: center; 
-          font-family: inherit; font-weight: bold;
-          transition: background-color 0.2s ease;
+        .rating-badge {
+          font-size: 11px;
+          color: var(--yellow);
+          letter-spacing: 1px;
         }
-        .modal-close:hover { background: var(--gray-200); color: var(--gray-900); }
-        
-        .modal-header { padding-right: 40px; }
-        .modal-header h2 { font-size: 1.4rem; font-weight: 700; margin: 0 0 6px; color: var(--gray-900); }
-        .modal-address { font-size: 0.95rem; color: var(--gray-500); margin: 0 0 16px; font-weight: 400; }
-        .modal-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-        .modal-count {
-          display: inline-flex; align-items: center; justify-content: center;
-          background: rgba(49, 130, 246, 0.1); color: var(--primary);
-          font-size: 0.85rem; font-weight: 600; 
-          padding: 6px 12px; border-radius: var(--radius-full);
+        .time {
+          font-size: 11px;
+          color: var(--text-sub);
+          margin-left: auto;
         }
-        .save-btn {
-          display: inline-flex; align-items: center; gap: 6px;
-          background: var(--gray-100); color: var(--gray-700);
-          border: none; font-size: 0.85rem; font-weight: 600; font-family: inherit;
-          padding: 6px 14px; border-radius: var(--radius-full);
-          cursor: pointer; transition: all 0.2s;
+
+        .restaurant-name {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--text);
+          margin-bottom: 4px;
         }
-        .save-btn:hover { background: var(--gray-200); }
-        .save-btn:active { transform: scale(0.95); }
-        .save-btn.saved { background: var(--primary); color: var(--white); }
-        .save-btn.saved:hover { background: var(--primary-hover); }
-        
-        .review-list { display: flex; flex-direction: column; gap: 16px; margin-top: 8px; }
-        .review-card {
-          background: var(--white); border: 1px solid var(--gray-200); border-radius: var(--radius-lg); 
-          padding: 16px; display: flex; flex-direction: column; gap: 12px;
-          box-shadow: var(--shadow-sm); transition: transform 0.2s ease, box-shadow 0.2s ease;
+        .menu-tag {
+          font-size: 13px;
+          color: var(--primary);
+          margin-bottom: 4px;
         }
-        .review-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-        .review-top { display: flex; align-items: center; gap: 12px; }
-        .reviewer-avatar {
-          width: 40px; height: 40px; border-radius: 50%;
-          background: var(--gray-100); color: var(--gray-600); 
-          display: flex; align-items: center; justify-content: center;
-          font-size: 1.1rem; font-weight: 600; flex-shrink: 0;
+        .comment {
+          font-size: 12px;
+          color: var(--text-sub);
+          font-style: italic;
+          margin-bottom: 4px;
         }
-        .reviewer-name { font-weight: 600; font-size: 1rem; color: var(--gray-900); display: block; margin-bottom: 2px; }
-        .review-rating { font-size: 0.75rem; display: block; }
-        .review-menu { font-size: 0.95rem; color: var(--primary); font-weight: 600; background: rgba(49, 130, 246, 0.05); padding: 6px 10px; border-radius: var(--radius-md); display: inline-flex; align-items: center; margin-right: auto; }
-        .review-comment { font-size: 1rem; color: var(--gray-700); margin: 0; line-height: 1.6; }
+        .rating-label {
+          font-size: 11px;
+          font-weight: 700;
+          color: var(--text-sub);
+          background: var(--bg);
+          display: inline-block;
+          padding: 2px 8px;
+          border-radius: var(--radius-full);
+        }
+
+        /* Friend list */
+        .friends-list { overflow: hidden; }
+
+        .friend-row {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px;
+          width: 100%;
+          text-align: left;
+          background: transparent;
+          min-height: 44px;
+          transition: background 0.1s;
+          cursor: pointer;
+        }
+        .friend-row:active { background: var(--bg); }
+        .friend-row.divider { border-bottom: 1px solid var(--border-color); }
+
+        .friend-avatar {
+          width: 38px;
+          height: 38px;
+          border-radius: var(--radius-full);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--text);
+          flex-shrink: 0;
+        }
+        .friend-info { flex: 1; }
+        .friend-name { font-size: 14px; font-weight: 700; color: var(--text); }
+        .friend-count { font-size: 12px; color: var(--text-sub); }
+        .friend-arrow { font-size: 22px; color: var(--text-sub); }
       `}</style>
     </div>
   );
