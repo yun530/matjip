@@ -17,7 +17,7 @@ export default function Navbar() {
     <>
       {/* Desktop Header */}
       <div className="header-wrapper desktop-only">
-        <header className="header doodle-box container">
+        <header className="header container">
           <Link href="/" className="logo">
             <span className="logo-emoji">🗺️</span>
             <span className="logo-text">쩝쩝박사지도</span>
@@ -27,7 +27,7 @@ export default function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`nav-item doodle-btn ${pathname === item.href ? "active" : ""}`}
+                className={`nav-item ${pathname === item.href ? "active" : ""}`}
               >
                 {item.icon} {item.name}
               </Link>
@@ -38,7 +38,7 @@ export default function Navbar() {
 
       {/* Mobile Bottom Tab Bar */}
       <div className="mobile-nav-wrapper mobile-only">
-        <nav className="mobile-nav doodle-box">
+        <nav className="mobile-nav">
           {navItems.map((item) => (
             <Link
               key={item.href}
@@ -56,89 +56,108 @@ export default function Navbar() {
         /* Desktop Header */
         .header-wrapper {
           position: sticky;
-          top: 16px;
+          top: 0;
           z-index: 1000;
-          padding: 0 20px;
-          margin-bottom: 30px;
+          background: var(--white);
+        }
+        .header-wrapper::after {
+          content: '';
+          position: absolute;
+          bottom: 0; left: 0; right: 0;
+          height: 0;
+          border-bottom: 2.5px solid var(--black);
+          filter: url(#wobbly);
+          pointer-events: none;
         }
         .header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           height: var(--header-height);
-          padding: 0 24px;
-          background-color: var(--accent); /* Crayon yellow sticky note */
-          border-radius: 15px 255px 15px 225px/225px 15px 225px 15px; /* Different doodle shape */
         }
         .logo {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-weight: 700;
-          font-size: 1.8rem;
+          gap: 8px;
+          font-weight: 900;
+          font-size: 1.4rem;
           color: var(--black);
-        }
-        .logo-text {
-          letter-spacing: 1px;
         }
         .desktop-nav {
           display: flex;
-          gap: 16px;
+          gap: 8px;
         }
         .nav-item {
-          background-color: var(--white);
-          font-size: 1.2rem;
-          color: var(--black);
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: var(--gray-700);
+          padding: 7px 14px;
+          border-radius: var(--radius-md);
+          border: 2px solid transparent;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.1s ease;
+        }
+        .nav-item:hover {
+          background-color: var(--secondary);
+          border-color: var(--black);
+          transform: translate(-1px, -1px);
         }
         .nav-item.active {
           background-color: var(--primary);
           color: var(--white);
-          transform: translateY(-2px);
-          box-shadow: 4px 4px 0px var(--black);
+          border: 2.5px solid var(--black);
         }
 
         /* Mobile Bottom Tab Bar */
         .mobile-nav-wrapper {
           position: fixed;
-          bottom: 16px;
-          left: 16px;
-          right: 16px;
+          bottom: 0;
+          left: 0;
+          right: 0;
           z-index: 1000;
+          background: var(--white);
           padding-bottom: env(safe-area-inset-bottom);
+        }
+        .mobile-nav-wrapper::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 0;
+          border-top: 2.5px solid var(--black);
+          filter: url(#wobbly);
+          pointer-events: none;
         }
         .mobile-nav {
           display: flex;
           justify-content: space-around;
           align-items: center;
-          height: 70px;
-          background-color: var(--accent);
-          border-radius: 255px 15px 225px 15px/15px 225px 15px 255px; 
-          padding: 0 10px;
+          height: 60px;
         }
         .mobile-nav-item {
           display: flex;
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 6px;
+          gap: 4px;
           flex: 1;
-          color: var(--black);
-          transition: all 0.2s;
-          opacity: 0.7;
+          color: var(--gray-400);
+          transition: all 0.1s ease;
         }
         .mobile-icon {
-          font-size: 1.6rem;
-          transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1.2);
+          font-size: 1.4rem;
+          transition: transform 0.15s ease;
         }
         .mobile-label {
-          font-size: 0.9rem;
-          font-weight: bold;
+          font-size: 0.75rem;
+          font-weight: 800;
         }
         .mobile-nav-item.active {
-          opacity: 1;
+          color: var(--primary);
         }
         .mobile-nav-item.active .mobile-icon {
-          transform: scale(1.2) translateY(-2px);
+          transform: translateY(-3px) scale(1.1);
         }
 
         /* Utility Classes for Responsive */

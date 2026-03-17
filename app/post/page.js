@@ -198,57 +198,61 @@ export default function PostPage() {
       )}
 
       <style jsx>{`
-        .post-container { padding-top: 40px; padding-bottom: 100px; max-width: 500px !important; }
-        .post-header { text-align: center; margin-bottom: 32px; }
-        .post-header h1 { font-size: 1.8rem; font-weight: 800; color: var(--black); margin-bottom: 8px; }
-        .post-header p { color: var(--gray-600); font-size: 1.1rem; }
+        .post-container { padding-top: 24px; padding-bottom: 100px; max-width: 600px !important; }
+        .post-header { text-align: left; margin-bottom: 32px; }
+        .post-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+        .post-header p { color: var(--gray-500); font-size: 1rem; }
 
-        .step-indicator { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 40px; }
-        .step { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--white); color: var(--gray-400); border: var(--border-width) solid var(--gray-400); font-family: inherit; font-size: 1.1rem; }
-        .step.active { background: var(--primary); color: white; border-color: var(--black); box-shadow: 2px 2px 0px var(--black); }
-        .step.done { background: var(--black); color: white; border-color: var(--black); }
-        .line { width: 40px; height: 3px; background: var(--black); border-radius: 2px; }
+        .step-indicator { display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 32px; }
+        .step { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; background: var(--gray-100); color: var(--gray-500); font-size: 1rem; transition: all 0.2s; border: 2.5px solid var(--gray-300); }
+        .step.active { background: var(--primary); color: white; border-color: var(--black); }
+        .step.done { background: var(--gray-300); color: white; border-color: var(--black); }
+        .line { width: 40px; height: 2.5px; background: var(--black); border-radius: 2px; }
 
-        .search-input-wrapper { display: flex; gap: 8px; margin-bottom: 24px; }
-        .search-input { flex: 1; padding: 14px 16px; border-radius: var(--doodle-radius); border: var(--border-width) solid var(--black); font-size: 1.1rem; font-family: inherit; font-weight: bold; background: white; box-shadow: 2px 2px 0px var(--black); outline: none; }
-        .search-input:focus { box-shadow: 4px 4px 0px var(--black); transform: translate(-2px, -2px); }
-        .search-btn { background: var(--black); color: white; padding: 0 20px; border-radius: var(--doodle-radius); font-weight: 700; border: var(--border-width) solid var(--black); box-shadow: 2px 2px 0px var(--black); font-size: 1.2rem; transition: transform 0.1s; }
-        .search-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px; }
-        .search-btn:disabled { opacity: 0.5; }
+        .search-input-wrapper { display: flex; gap: 8px; margin-bottom: 24px; position: relative; }
+        .search-input { flex: 1; padding: 14px 16px 14px 44px; border-radius: var(--radius-lg); border: 2.5px solid var(--black); font-size: 1rem; font-weight: 500; background: white; transition: all 0.1s; outline: none; font-family: inherit; }
+        .search-input:focus { border-color: var(--primary); }
+        .search-input-wrapper::before { content: '🔍'; position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 1.1rem; opacity: 0.5; }
+        .search-btn { display: none; }
 
         .search-results { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; min-height: 200px; }
-        .no-results { display: flex; align-items: center; justify-content: center; height: 100px; color: var(--gray-600); font-size: 1.1rem; font-weight: bold; border: var(--border-width) dashed var(--gray-400); border-radius: var(--doodle-radius); background: rgba(255,255,255,0.5); }
-        .result-item { padding: 16px; background: white; border: var(--border-width) solid var(--black); border-radius: var(--doodle-radius); box-shadow: 3px 3px 0px var(--black); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; }
-        .result-item:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); }
-        .result-item.selected { background: var(--accent); }
-        .place-name { display: block; font-weight: 800; font-size: 1.2rem; margin-bottom: 4px; }
-        .place-address { font-size: 0.95rem; color: var(--gray-800); font-weight: 600; }
-        .check-icon { font-size: 1.5rem; }
+        .no-results { display: flex; align-items: center; justify-content: center; height: 120px; color: var(--gray-400); font-size: 1rem; border: 2.5px dashed var(--gray-300); border-radius: var(--radius-lg); background: var(--gray-50); }
+        .result-item { position: relative; padding: 16px; background: white; border: none; border-radius: var(--radius-lg); display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.1s; }
+        .result-item::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .result-item:hover { background: var(--gray-50); transform: translate(-1px, -1px); }
+        .result-item.selected { background: rgba(49,130,246,0.05); }
+        .place-name { display: block; font-weight: 700; font-size: 1.1rem; color: var(--gray-900); margin-bottom: 4px; }
+        .place-address { font-size: 0.9rem; color: var(--gray-500); font-weight: 400; }
+        .check-icon { font-size: 1.2rem; }
 
-        .next-btn, .submit-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border-radius: var(--doodle-radius); font-size: 1.3rem; font-weight: 800; cursor: pointer; border: var(--border-width) solid var(--black); box-shadow: 4px 4px 0px var(--black); transition: all 0.15s; font-family: inherit; }
-        .next-btn:disabled, .submit-btn:disabled { background: var(--gray-200); cursor: not-allowed; box-shadow: none; border-color: var(--gray-400); color: var(--gray-600); }
-        .next-btn:not(:disabled):active, .submit-btn:not(:disabled):active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
+        .next-btn, .submit-btn { position: relative; width: 100%; padding: 16px; background: var(--primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: all 0.1s; font-family: inherit; }
+        .next-btn::before, .submit-btn::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .next-btn:hover:not(:disabled), .submit-btn:hover:not(:disabled) { transform: translate(-2px, -2px); }
+        .next-btn:active:not(:disabled), .submit-btn:active:not(:disabled) { transform: translate(3px, 3px); }
+        .next-btn:disabled, .submit-btn:disabled { background: var(--gray-200); color: var(--gray-400); cursor: not-allowed; }
 
-        .selected-place-card { background: var(--white); padding: 20px; border-radius: var(--doodle-radius); border: var(--border-width) solid var(--black); box-shadow: 4px 4px 0px var(--black); margin-bottom: 32px; position: relative; }
-        .selected-place-card .label { font-size: 0.9rem; color: var(--secondary); font-weight: 800; margin-bottom: 8px; display: block; border: 2px solid var(--secondary); border-radius: 20px; padding: 2px 8px; width: fit-content; }
-        .selected-place-card h3 { margin-bottom: 4px; color: var(--black); font-size: 1.4rem; font-weight: bold; }
-        .selected-place-card p { font-size: 1rem; color: var(--gray-800); font-weight: bold; }
-        .edit-btn { position: absolute; top: 20px; right: 20px; font-size: 1rem; color: var(--black); font-weight: 800; background: var(--white); border: 2px solid var(--black); padding: 4px 10px; border-radius: 10px; box-shadow: 2px 2px 0px var(--black); cursor: pointer; font-family: inherit; }
-        .edit-btn:active { transform: translate(1px, 1px); box-shadow: none; }
+        .selected-place-card { position: relative; background: var(--gray-50); padding: 20px; border-radius: var(--radius-lg); border: none; margin-bottom: 32px; }
+        .selected-place-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .selected-place-card .label { font-size: 0.8rem; color: var(--primary); font-weight: 700; margin-bottom: 8px; display: inline-block; background: rgba(49,130,246,0.1); padding: 4px 10px; border-radius: var(--radius-full); }
+        .selected-place-card h3 { margin-bottom: 4px; color: var(--gray-900); font-size: 1.2rem; font-weight: 700; }
+        .selected-place-card p { font-size: 0.95rem; color: var(--gray-500); }
+        .edit-btn { position: absolute; top: 20px; right: 20px; font-size: 0.9rem; color: var(--gray-700); font-weight: 700; background: white; border: 2.5px solid var(--black); padding: 6px 12px; border-radius: var(--radius-md); transition: all 0.1s; font-family: inherit; cursor: pointer; }
+        .edit-btn:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
 
         .form-group { margin-bottom: 28px; }
-        .form-group label { display: block; font-weight: 800; font-size: 1.2rem; margin-bottom: 12px; color: var(--black); }
-        .form-group input, .form-group textarea { width: 100%; padding: 14px 16px; border-radius: var(--doodle-radius); border: var(--border-width) solid var(--black); font-size: 1.1rem; font-weight: bold; font-family: inherit; background: white; box-shadow: 3px 3px 0px var(--black); outline: none; transition: transform 0.15s, box-shadow 0.15s; }
-        .form-group input:focus, .form-group textarea:focus { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); }
+        .form-group label { display: block; font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; color: var(--gray-800); }
+        .form-group input, .form-group textarea { width: 100%; padding: 14px 16px; border-radius: var(--radius-lg); border: 2.5px solid var(--black); font-size: 1rem; background: var(--gray-50); outline: none; transition: all 0.1s; color: var(--gray-900); font-family: inherit; box-sizing: border-box; }
+        .form-group input:focus, .form-group textarea:focus { border-color: var(--primary); background: white; }
         .form-group textarea { height: 120px; resize: none; }
+        .form-group input::placeholder, .form-group textarea::placeholder { color: var(--gray-400); }
 
         .rating-selector { display: flex; flex-direction: row-reverse; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
-        .rating-btn { font-size: 2rem; filter: grayscale(1); opacity: 0.3; transition: all 0.2s; background: none; border: none; cursor: pointer; transform-origin: center; display: inline-block; }
-        .rating-btn:hover { transform: scale(1.2); }
-        .rating-btn.active, .rating-btn.active ~ .rating-btn { filter: grayscale(0); opacity: 1; transform: scale(1.1); }
-        .rating-guide-text { font-size: 1.1rem; font-weight: 800; color: var(--primary); background: rgba(255, 107, 107, 0.1); padding: 4px 12px; border-radius: 20px; display: inline-block; border: 2px solid var(--primary); }
+        .rating-btn { font-size: 2.2rem; filter: grayscale(1); opacity: 0.2; transition: all 0.2s; background: none; border: none; cursor: pointer; padding: 0; }
+        .rating-btn:hover { transform: scale(1.1); opacity: 0.5; }
+        .rating-btn.active, .rating-btn.active ~ .rating-btn { filter: grayscale(0); opacity: 1; transform: scale(1.05); }
+        .rating-guide-text { font-size: 0.95rem; font-weight: 700; color: var(--primary); border: 2.5px solid var(--primary); padding: 6px 14px; border-radius: var(--radius-lg); display: inline-block; }
 
-        .submit-btn { background: var(--primary); margin-top: 20px; }
+        .submit-btn { margin-top: 10px; }
       `}</style>
     </div>
   );

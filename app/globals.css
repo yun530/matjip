@@ -1,54 +1,80 @@
+@import url("https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Hahmlet:wght@400;600;700;900&display=swap");
+
 :root {
-  /* Crayon/Pastel Colors */
-  --primary: #FF6B6B; /* Soft red for primary actions */
-  --primary-hover: #FA5252;
-  --secondary: #4DABF7; /* Sky blue */
-  --accent: #FCC419; /* Crayon yellow */
-  
-  /* Neutral Colors */
-  --white: #FFFFFF;
-  --paper: #FFFDF7; /* Warm paper background */
-  --gray-50: #F1F3F5;
-  --gray-100: #E9ECEF;
-  --gray-200: #DEE2E6;
-  --gray-400: #CED4DA;
-  --gray-600: #868E96;
-  --gray-800: #343A40;
-  --black: #2A2A2A; /* Softer sketch black */
+  /* Hand-drawn palette — warm, slightly muted */
+  --primary: #3b82f6;
+  --primary-hover: #2563eb;
+  --secondary: #fef9ee;
+  --secondary-hover: #fdf0d0;
+  --accent: #ff6b6b;
+
+  /* Neutral scale */
+  --white: #fffef9;
+  --gray-50: #faf8f2;
+  --gray-100: #f2efe6;
+  --gray-200: #e2ddd0;
+  --gray-300: #ccc5b4;
+  --gray-400: #aaa394;
+  --gray-500: #8a8070;
+  --gray-600: #6b6356;
+  --gray-700: #4e483e;
+  --gray-800: #332e26;
+  --gray-900: #1a1610;
+
+  --black: #1a1610;
 
   /* UI Pin Logic Colors */
-  --pin-red: #FA5252;
-  --pin-yellow: #FCC419;
-  --pin-blue: #4DABF7;
+  --pin-red: #ff3b30;
+  --pin-yellow: #ffcc00;
+  --pin-blue: #3b82f6;
 
-  /* Layout & Doodle Constants */
-  --max-width: 1200px;
-  --header-height: 70px;
-  --border-width: 3px;
-  --doodle-radius: 255px 15px 225px 15px/15px 225px 15px 255px;
-  --doodle-shadow: 4px 4px 0px var(--black);
-  
+  /* Layout Constants */
+  --max-width: 600px;
+  --header-height: 64px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 9999px;
+
+  /* Hand-drawn sketch shadows */
+  --shadow-sm: 2px 2px 0px var(--black);
+  --shadow-md: 4px 4px 0px var(--black);
+  --shadow-lg: 6px 6px 0px var(--black);
+  --shadow-float: 8px 8px 0px var(--black);
+
+  /* Sketch border */
+  --border-sketch: 2.5px solid var(--black);
+
   /* Default */
-  --background: var(--paper);
-  --foreground: var(--black);
+  --background: var(--gray-50);
+  --foreground: var(--gray-900);
 }
 
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
   height: 100%;
   width: 100%;
-  background: var(--background);
+  background-color: var(--background);
+  background-image: url('/crooked_map_bg.png');
+  background-size: 400px;
+  background-repeat: repeat;
+  background-blend-mode: multiply;
   color: var(--foreground);
-  letter-spacing: 0.5px;
+  font-family: "Gowun Dodum", sans-serif;
+  letter-spacing: -0.015em;
 }
 
 body {
-  line-height: 1.6;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
@@ -68,38 +94,75 @@ button {
   font-family: inherit;
 }
 
-/* Doodle Style Utility Classes */
-.doodle-box {
+/* Base Component Classes — Hand-drawn style */
+.card {
+  position: relative;
   background-color: var(--white);
-  border: var(--border-width) solid var(--black);
-  border-radius: var(--doodle-radius);
-  box-shadow: var(--doodle-shadow);
-  transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.4, 1.2), box-shadow 0.2s;
+  border-radius: var(--radius-lg);
+  border: 2.5px solid var(--black);
+  transition: transform 0.1s ease;
 }
 
-.doodle-btn {
-  background-color: var(--white);
-  border: var(--border-width) solid var(--black);
-  border-radius: var(--doodle-radius);
-  box-shadow: 3px 3px 0px var(--black);
-  transition: all 0.15s ease;
-  font-weight: bold;
-  font-size: 1.1rem;
-  padding: 8px 16px;
+.card:hover {
+  transform: translate(-2px, -2px);
+}
+
+.btn-primary {
+  position: relative;
+  background-color: var(--primary);
+  color: var(--white);
+  border-radius: var(--radius-md);
+  border: 2.5px solid var(--black);
+  padding: 12px 20px;
+  font-weight: 800;
+  font-size: 1rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
+  transition: transform 0.1s ease;
 }
 
-.doodle-btn:hover {
+.btn-primary:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 5px 5px 0px var(--black);
 }
 
-.doodle-btn:active {
+.btn-primary:active {
+  transform: translate(3px, 3px);
+}
+
+.btn-secondary {
+  position: relative;
+  background-color: var(--secondary);
+  color: var(--gray-800);
+  border-radius: var(--radius-md);
+  border: 2.5px solid var(--black);
+  padding: 12px 20px;
+  font-weight: 800;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: transform 0.1s ease;
+}
+
+.btn-secondary:hover {
+  transform: translate(-2px, -2px);
+}
+
+.btn-secondary:active {
   transform: translate(2px, 2px);
-  box-shadow: 1px 1px 0px var(--black);
+  box-shadow: none;
+}
+
+/* Hahmlet — 제목, 카테고리 등에 사용 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Hahmlet", serif;
+}
+
+.font-title {
+  font-family: "Hahmlet", serif;
 }
 
 /* Common Layout Classes */

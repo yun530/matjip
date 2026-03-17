@@ -97,133 +97,52 @@ export default function CollectionPage() {
       )}
 
       <style jsx>{`
-        .collection-container {
-          padding-top: 40px;
-          padding-bottom: 100px;
-          max-width: 600px !important;
-        }
-        .page-header { margin-bottom: 32px; }
-        .page-header h1 { font-size: 2rem; font-weight: 900; color: var(--black); margin-bottom: 6px; }
-        .page-header p { color: var(--gray-600); font-size: 1.1rem; font-weight: bold; }
+        .collection-container { padding-top: 24px; padding-bottom: 100px; max-width: 600px !important; }
+        .page-header { margin-bottom: 24px; }
+        .page-header h1 { font-size: 1.6rem; font-weight: 700; color: var(--gray-900); margin-bottom: 8px; }
+        .page-header p { color: var(--gray-500); font-size: 1rem; }
 
-        .save-count {
-          font-size: 1rem; font-weight: 800; color: var(--gray-600);
-          margin-bottom: 16px;
-        }
+        .save-count { font-size: 0.95rem; font-weight: 700; color: var(--gray-600); margin-bottom: 16px; }
 
         .card-list { display: flex; flex-direction: column; gap: 16px; }
 
-        .place-card {
-          background: var(--white);
-          border: var(--border-width) solid var(--black);
-          border-radius: var(--doodle-radius);
-          box-shadow: 4px 4px 0px var(--black);
-          overflow: hidden;
-        }
-        .card-main {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          padding: 20px;
-          gap: 12px;
-        }
+        .place-card { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); transition: transform 0.1s; }
+        .place-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; z-index: 1; }
+        .place-card:hover { transform: translate(-2px, -2px); }
+
+        .card-main { display: flex; justify-content: space-between; align-items: flex-start; padding: 20px; gap: 12px; }
         .card-info { flex: 1; min-width: 0; }
-        .card-name {
-          font-size: 1.3rem; font-weight: 900; color: var(--black);
-          margin: 0 0 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .card-address {
-          font-size: 0.95rem; color: var(--gray-600); font-weight: 600;
-          margin: 0 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        .card-tags { display: flex; flex-wrap: wrap; gap: 6px; }
-        .tag {
-          font-size: 0.85rem; font-weight: 700;
-          padding: 3px 10px; border-radius: 20px;
-          border: 2px solid var(--black);
-        }
-        .tag.recommend { background: var(--secondary); }
-        .tag.menu { background: rgba(255,255,255,0.8); }
+        .card-name { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-address { font-size: 0.9rem; color: var(--gray-500); font-weight: 400; margin: 0 0 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .card-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tag { font-size: 0.8rem; font-weight: 700; padding: 4px 10px; border-radius: var(--radius-sm); background: var(--gray-100); color: var(--gray-700); border: 1.5px solid var(--gray-300); }
+        .tag.recommend { background: rgba(49,130,246,0.08); color: var(--primary); border-color: var(--primary); }
 
-        .card-actions {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 8px;
-          flex-shrink: 0;
-        }
-        .saved-date {
-          font-size: 0.85rem; font-weight: 700; color: var(--gray-400);
-        }
-        .toggle-btn, .remove-btn {
-          width: 32px; height: 32px;
-          border-radius: var(--doodle-radius);
-          border: 2px solid var(--black);
-          background: var(--white);
-          font-size: 0.9rem; font-weight: 900;
-          cursor: pointer; font-family: inherit;
-          box-shadow: 2px 2px 0px var(--black);
-          display: flex; align-items: center; justify-content: center;
-          transition: all 0.1s;
-        }
-        .toggle-btn:active, .remove-btn:active { transform: translate(2px, 2px); box-shadow: none; }
-        .remove-btn { color: var(--pin-red); }
+        .card-actions { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; flex-shrink: 0; }
+        .saved-date { font-size: 0.8rem; font-weight: 500; color: var(--gray-400); }
+        .actions-row { display: flex; gap: 8px; }
+        .toggle-btn, .remove-btn { width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--black); background: var(--gray-100); color: var(--gray-600); font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.1s; font-family: inherit; }
+        .toggle-btn:hover { background: var(--gray-200); transform: translate(-1px, -1px); }
+        .remove-btn:hover { background: rgba(255,59,48,0.1); color: var(--pin-red); transform: translate(-1px, -1px); }
 
-        .review-divider {
-          height: 2px; background: var(--black);
-          margin: 0;
-        }
-        .review-section {
-          background: #fafafa;
-          display: flex; flex-direction: column; gap: 12px;
-          padding: 16px 20px;
-        }
-        .mini-review {
-          background: var(--white);
-          border: var(--border-width) solid var(--black);
-          border-radius: var(--doodle-radius);
-          box-shadow: 3px 3px 0px var(--black);
-          padding: 12px 14px;
-          display: flex; flex-direction: column; gap: 6px;
-        }
-        .mini-top { display: flex; align-items: center; gap: 8px; }
-        .mini-avatar {
-          width: 30px; height: 30px; border-radius: 50%;
-          background: var(--primary); color: white;
-          border: 2px solid var(--black);
-          display: flex; align-items: center; justify-content: center;
-          font-size: 0.9rem; font-weight: 900; flex-shrink: 0;
-        }
-        .mini-name { font-weight: 800; font-size: 0.95rem; display: block; }
+        .review-divider { height: 2px; background: var(--black); margin: 0; }
+        .review-section { background: var(--gray-50); display: flex; flex-direction: column; gap: 12px; padding: 16px 20px; }
+        .mini-review { position: relative; background: var(--white); border: none; border-radius: var(--radius-lg); padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+        .mini-review::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .mini-top { display: flex; align-items: center; gap: 10px; }
+        .mini-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--gray-100); color: var(--gray-600); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 700; flex-shrink: 0; border: 2px solid var(--black); }
+        .mini-name { font-weight: 700; font-size: 0.95rem; display: block; color: var(--gray-900); }
         .mini-rating { font-size: 0.75rem; }
-        .mini-menu { font-size: 0.95rem; color: var(--gray-800); font-weight: 600; }
-        .mini-comment { font-size: 1rem; color: var(--black); margin: 0; line-height: 1.5; }
+        .mini-menu { font-size: 0.85rem; color: var(--primary); font-weight: 700; display: inline-block; background: rgba(49,130,246,0.05); padding: 4px 8px; border-radius: var(--radius-sm); margin-right: auto; border: 1.5px solid var(--primary); }
+        .mini-comment { font-size: 0.95rem; color: var(--gray-700); margin: 0; line-height: 1.5; }
 
-        /* 빈 상태 */
-        .empty-state {
-          display: flex; flex-direction: column;
-          align-items: center; justify-content: center;
-          padding: 80px 20px; gap: 12px;
-          border: var(--border-width) dashed var(--black);
-          border-radius: var(--doodle-radius);
-          background: rgba(255,255,255,0.5);
-          text-align: center;
-        }
-        .empty-icon { font-size: 3.5rem; }
-        .empty-title { font-size: 1.3rem; font-weight: 900; color: var(--black); margin: 0; }
-        .empty-sub { font-size: 1rem; font-weight: 700; color: var(--gray-600); margin: 0; line-height: 1.6; }
-        .go-map-btn {
-          margin-top: 8px;
-          padding: 12px 28px;
-          background: var(--primary); color: white;
-          border: var(--border-width) solid var(--black);
-          border-radius: var(--doodle-radius);
-          font-size: 1.1rem; font-weight: 800; font-family: inherit;
-          box-shadow: 4px 4px 0px var(--black);
-          transition: all 0.15s;
-          cursor: pointer;
-        }
-        .go-map-btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
+        .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 80px 20px; gap: 12px; border: 2.5px dashed var(--black); border-radius: var(--radius-xl); background: var(--gray-50); text-align: center; }
+        .empty-icon { font-size: 3rem; margin-bottom: 8px; opacity: 0.5; }
+        .empty-title { font-size: 1.2rem; font-weight: 700; color: var(--gray-700); margin: 0; }
+        .empty-sub { font-size: 0.95rem; font-weight: 400; color: var(--gray-500); margin: 0; line-height: 1.5; }
+        .go-map-btn { position: relative; margin-top: 16px; padding: 12px 24px; background: var(--primary); color: white; border: none; border-radius: var(--radius-lg); font-size: 1rem; font-weight: 700; transition: all 0.1s; display: inline-block; }
+        .go-map-btn::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .go-map-btn:hover { transform: translate(-2px, -2px); }
       `}</style>
     </div>
   );

@@ -70,6 +70,9 @@ export default function ProfilePage() {
 
   return (
     <div className="profile-container container">
+      {/* 배경 이미지 */}
+      <div className="bg-image" />
+      <div className="vignette" />
       {/* 내 프로필 */}
       <div className="profile-card">
         <div className="avatar-circle">{user.nickname[0]}</div>
@@ -112,136 +115,51 @@ export default function ProfilePage() {
       </div>
 
       <style jsx>{`
-        .profile-container {
-          padding-top: 40px;
-          padding-bottom: 100px;
-          max-width: 500px !important;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
+        .bg-image {
+          position: fixed;
+          inset: 0;
+          background-image: url('/login_bg.jpg');
+          background-size: cover;
+          background-position: center;
+          opacity: 0.45;
+          pointer-events: none;
+          z-index: -1;
         }
+        .vignette {
+          position: fixed;
+          inset: 0;
+          background: radial-gradient(ellipse at center, transparent 30%, rgba(255,255,255,0.6) 70%, rgba(255,255,255,0.95) 100%);
+          pointer-events: none;
+          z-index: -1;
+        }
+        .profile-container { padding-top: 24px; padding-bottom: 100px; max-width: 500px !important; display: flex; flex-direction: column; gap: 20px; }
 
-        .profile-card {
-          background: white;
-          border-radius: var(--doodle-radius);
-          border: var(--border-width) solid var(--black);
-          box-shadow: 4px 4px 0px var(--black);
-          padding: 24px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-        }
-        .avatar-circle {
-          width: 70px;
-          height: 70px;
-          border-radius: 50%;
-          border: var(--border-width) solid var(--black);
-          background: var(--primary);
-          color: white;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 2rem;
-          font-weight: 900;
-          flex-shrink: 0;
-          box-shadow: 2px 2px 0px var(--black);
-        }
-        .profile-card h2 { font-size: 1.6rem; margin: 0 0 4px; color: var(--black); font-weight: 800; }
-        .friends-count { color: var(--gray-800); font-size: 1rem; margin: 0; font-weight: bold; background: var(--accent); padding: 2px 10px; border-radius: 12px; border: 2px solid var(--black); display: inline-block; }
+        .profile-card { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); padding: 24px; display: flex; align-items: center; gap: 20px; }
+        .profile-card::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .avatar-circle { width: 70px; height: 70px; border-radius: 50%; border: 2.5px solid var(--black); background: rgba(49,130,246,0.1); color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: 700; flex-shrink: 0; }
+        .profile-card h2 { font-size: 1.4rem; margin: 0 0 6px; color: var(--gray-900); font-weight: 700; }
+        .friends-count { color: var(--gray-600); font-size: 0.95rem; margin: 0; font-weight: 700; background: var(--gray-100); padding: 4px 12px; border-radius: var(--radius-full); border: 2px solid var(--black); display: inline-block; }
 
-        .section {
-          background: white;
-          border-radius: var(--doodle-radius);
-          border: var(--border-width) solid var(--black);
-          box-shadow: 4px 4px 0px var(--black);
-          padding: 24px;
-        }
-        .section h3 {
-          font-size: 1.3rem;
-          font-weight: 800;
-          color: var(--black);
-          margin: 0 0 4px;
-        }
-        .section-desc { color: var(--gray-600); font-size: 1rem; margin: 0 0 16px; font-weight: bold; }
+        .section { position: relative; background: var(--white); border: none; border-radius: var(--radius-xl); padding: 24px; }
+        .section::before { content: ''; position: absolute; inset: 0; border: 2.5px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .section h3 { font-size: 1.2rem; font-weight: 700; color: var(--gray-900); margin: 0 0 6px; }
+        .section-desc { color: var(--gray-500); font-size: 0.95rem; margin: 0 0 16px; font-weight: 400; }
 
-        .invite-box {
-          display: flex;
-          gap: 8px;
-          align-items: center;
-          background: var(--paper);
-          border: var(--border-width) solid var(--black);
-          border-radius: var(--doodle-radius);
-          padding: 12px 16px;
-          box-shadow: inset 2px 2px 0px rgba(0,0,0,0.1);
-        }
-        .invite-link {
-          flex: 1;
-          font-size: 0.95rem;
-          color: var(--black);
-          font-weight: bold;
-          word-break: break-all;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        .copy-btn {
-          background: var(--secondary);
-          color: var(--black);
-          border: var(--border-width) solid var(--black);
-          border-radius: 12px 255px 12px 255px/255px 12px 255px 12px;
-          box-shadow: 2px 2px 0px var(--black);
-          padding: 8px 14px;
-          font-size: 1rem;
-          font-family: inherit;
-          font-weight: 800;
-          cursor: pointer;
-          white-space: nowrap;
-          flex-shrink: 0;
-          transition: all 0.1s;
-        }
-        .copy-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px; }
+        .invite-box { position: relative; display: flex; gap: 8px; align-items: center; background: var(--gray-50); border: none; border-radius: var(--radius-lg); padding: 12px 16px; }
+        .invite-box::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .invite-link { flex: 1; font-size: 0.95rem; color: var(--gray-700); font-weight: 500; word-break: break-all; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .copy-btn { position: relative; background: var(--white); color: var(--gray-700); border: 2px solid var(--black); border-radius: var(--radius-md); padding: 8px 14px; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: all 0.1s; font-family: inherit; }
+        .copy-btn:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
 
-        .empty-friends {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 12px;
-          padding: 32px 0;
-          color: var(--gray-600);
-          text-align: center;
-          font-weight: bold;
-        }
-        .empty-friends span { font-size: 2.5rem; }
-        .empty-friends p { font-size: 1.1rem; line-height: 1.6; margin: 0; }
+        .empty-friends { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px 0; color: var(--gray-500); text-align: center; }
+        .empty-friends span { font-size: 2.5rem; opacity: 0.6; margin-bottom: 8px; }
+        .empty-friends p { font-size: 1rem; line-height: 1.5; margin: 0; font-weight: 400; }
 
-        .friends-list { display: flex; flex-direction: column; gap: 16px; }
-        .friend-item {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          font-weight: 800;
-          font-size: 1.2rem;
-          color: var(--black);
-          background: var(--paper);
-          padding: 12px 16px;
-          border: var(--border-width) solid var(--black);
-          border-radius: var(--doodle-radius);
-          box-shadow: 2px 2px 0px var(--black);
-        }
-        .friend-avatar {
-          width: 44px;
-          height: 44px;
-          border-radius: 50%;
-          background: white;
-          border: var(--border-width) solid var(--black);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.2rem;
-          font-weight: 900;
-          color: var(--black);
-          flex-shrink: 0;
-        }
+        .friends-list { display: flex; flex-direction: column; gap: 12px; }
+        .friend-item { position: relative; display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 1.05rem; color: var(--gray-900); background: var(--gray-50); padding: 12px 16px; border: none; border-radius: var(--radius-lg); transition: all 0.1s; }
+        .friend-item::before { content: ''; position: absolute; inset: 0; border: 2px solid var(--black); border-radius: inherit; filter: url(#wobbly); pointer-events: none; }
+        .friend-item:hover { background: var(--gray-100); transform: translate(-1px, -1px); }
+        .friend-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--white); border: 2px solid var(--black); display: flex; align-items: center; justify-content: center; font-size: 1rem; font-weight: 700; color: var(--gray-600); flex-shrink: 0; }
       `}</style>
     </div>
   );
