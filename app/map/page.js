@@ -223,6 +223,7 @@ function MapPageInner() {
   const allGroupsRef = useRef({});
 
   const [mapStatus, setMapStatus] = useState("loading");
+  const [debugInfo, setDebugInfo] = useState("");
   const [friends, setFriends] = useState([]);
   const [selectedFriend, setSelectedFriend] = useState(paramFriend || "all");
   const [selectedPlace, setSelectedPlace] = useState(null);
@@ -391,7 +392,13 @@ function MapPageInner() {
 
     // Give up after 10s
     giveUpTimeout = setTimeout(() => {
-      if (isMounted && !mapRef.current) setMapStatus("error");
+      if (isMounted && !mapRef.current) {
+        const kakaoExists = !!window.kakao;
+        const mapsExists = !!(window.kakao && window.kakao.maps);
+        const mapFnExists = !!(window.kakao && window.kakao.maps && typeof window.kakao.maps.Map === "function");
+        setDebugInfo(`kakao:${kakaoExists} maps:${mapsExists} Map():${mapFnExists} key:${process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY ? process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY.slice(0, 8) + "…" : "❌없음"}`);
+        setMapStatus("error");
+      }
     }, 10000);
 
     return () => {
@@ -424,8 +431,8 @@ function MapPageInner() {
         <div className="overlay">
           <span style={{ fontSize: "2rem" }}>⚠️</span>
           <p>지도를 불러오는 데 실패했습니다.</p>
-          <p style={{ fontSize: "12px", color: "var(--text-sub)", marginTop: 4 }}>
-            키: {process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY ? process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY.slice(0, 6) + "…" : "❌ 없음"}
+          <p style={{ fontSize: "11px", color: "var(--text-sub)", marginTop: 4, textAlign: "center", padding: "0 16px", wordBreak: "break-all" }}>
+            {debugInfo}
           </p>
           <button onClick={() => window.location.reload()}>다시 시도</button>
         </div>
