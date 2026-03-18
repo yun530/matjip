@@ -125,7 +125,7 @@ function PlacePopup({ place, onClose }) {
               style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
               onMouseEnter={() => setHoveredIndex(i)}
               onMouseLeave={() => setHoveredIndex(null)}
-              onTouchStart={() => setHoveredIndex(i === hoveredIndex ? null : i)}
+              onClick={(e) => { e.stopPropagation(); setHoveredIndex(hoveredIndex === i ? null : i); }}
             >
               <div
                 style={{
