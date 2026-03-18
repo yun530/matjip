@@ -15,14 +15,26 @@ export default function KakaoScript() {
       return;
     }
 
+    const url = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services,clusterer&autoload=false`;
+
+    fetch(url).then(res => {
+      console.log("[KakaoScript] fetch status:", res.status, res.url);
+      return res.text();
+    }).then(text => {
+      console.log("[KakaoScript] response preview:", text.slice(0, 200));
+    }).catch(e => {
+      console.error("[KakaoScript] fetch error:", e);
+    });
+
     const script = document.createElement("script");
-    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services,clusterer&autoload=false`;
+    script.src = url;
     script.async = true;
     script.onload = () => {
+      console.log("[KakaoScript] script loaded, window.kakao:", !!window.kakao);
       window.dispatchEvent(new Event("kakao-sdk-loaded"));
     };
     script.onerror = (e) => {
-      console.error("[KakaoScript] Failed to load Kakao Maps SDK", e);
+      console.error("[KakaoScript] script onerror:", e);
       window.dispatchEvent(new Event("kakao-sdk-error"));
     };
     document.head.appendChild(script);
