@@ -127,7 +127,7 @@ export default function HomePage() {
         <>
           {/* 근처 맛집 */}
           <section className="section">
-            <div className="section-label">근처 맛집</div>
+            <div className="section-label">오늘 이거 어때요?</div>
             {locStatus === "idle" || locStatus === "loading" ? (
               <div className="empty-card card">
                 <p className="empty-sub">위치를 확인하는 중…</p>
