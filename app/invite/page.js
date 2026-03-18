@@ -130,20 +130,21 @@ function InviteContent() {
       )}
 
       <style jsx>{`
-        .invite-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--gray-50); }
-        .card { position: relative; background: white; border-radius: 24px; border: 2.5px solid var(--black); padding: 40px 32px; width: 100%; max-width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+        .invite-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: var(--bg); }
+        .card { position: relative; background: var(--card-bg); border-radius: 24px; border: 2px solid var(--border-color); padding: 40px 32px; width: 100%; max-width: 360px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; box-shadow: var(--shadow-float); }
         .big-emoji { font-size: 3.5rem; }
-        h2 { font-size: 1.4rem; font-weight: 900; color: var(--black); margin: 0; }
-        p { color: var(--gray-600); font-size: 0.95rem; margin: 0; }
-        .spinner { width: 32px; height: 32px; border: 3px solid var(--gray-100); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
+        h2 { font-size: 1.4rem; font-weight: 900; color: var(--text); margin: 0; }
+        p { color: var(--text-sub); font-size: 0.95rem; margin: 0; }
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--border-color); border-left-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .nickname-section { width: 100%; text-align: left; margin-top: 8px; display: flex; flex-direction: column; gap: 6px; }
-        .nickname-section label { font-weight: 800; font-size: 0.85rem; color: var(--gray-600); }
-        .nickname-section input { width: 100%; padding: 14px 16px; border: 2.5px solid var(--black); border-radius: 12px; font-size: 1rem; outline: none; box-sizing: border-box; font-family: inherit; }
+        .nickname-section label { font-weight: 800; font-size: 0.85rem; color: var(--text-sub); }
+        .nickname-section input { width: 100%; padding: 14px 16px; border: 2px solid var(--border-color); border-radius: 12px; font-size: 1rem; outline: none; box-sizing: border-box; font-family: inherit; color: var(--text); background: var(--bg); }
+        .nickname-section input:focus { border-color: var(--primary); }
         .input-error { font-size: 0.82rem; font-weight: 700; color: #ff3b30; }
-        .primary-btn { width: 100%; padding: 16px; background: var(--primary); color: white; border: 2.5px solid var(--black); border-radius: 14px; font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-top: 8px; font-family: inherit; transition: transform 0.1s; }
-        .primary-btn:hover:not(:disabled) { transform: translate(-2px, -2px); }
-        .primary-btn:disabled { background: var(--gray-200); cursor: not-allowed; border-color: var(--gray-300); }
+        .primary-btn { width: 100%; padding: 16px; background: var(--primary); color: #fff; border: 2px solid var(--border-color); border-radius: var(--radius-btn); font-size: 1.05rem; font-weight: 800; cursor: pointer; margin-top: 8px; font-family: var(--font-main); transition: opacity 0.1s; }
+        .primary-btn:hover:not(:disabled) { opacity: 0.9; }
+        .primary-btn:disabled { background: var(--text-light); color: var(--card-bg); cursor: not-allowed; }
       `}</style>
     </div>
   );
