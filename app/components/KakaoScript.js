@@ -1,25 +1,32 @@
 "use client";
 
-import Script from "next/script";
+import { useEffect } from "react";
 
 export default function KakaoScript() {
-  const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+  useEffect(() => {
+    const KAKAO_KEY = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    if (!KAKAO_KEY) {
+      console.error("[KakaoScript] NEXT_PUBLIC_KAKAO_MAP_API_KEY is not set");
+      return;
+    }
 
-  if (!KAKAO_KEY) {
-    console.error("[KakaoScript] NEXT_PUBLIC_KAKAO_MAP_API_KEY is not set");
-    return null;
-  }
+    if (window.kakao && window.kakao.maps) {
+      window.dispatchEvent(new Event("kakao-sdk-loaded"));
+      return;
+    }
 
-  return (
-    <Script
-      src={`https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services,clusterer&autoload=false`}
-      strategy="afterInteractive"
-      onLoad={() => {
-        window.dispatchEvent(new Event("kakao-sdk-loaded"));
-      }}
-      onError={(e) => {
-        console.error("[KakaoScript] Failed to load Kakao Maps SDK", e);
-      }}
-    />
-  );
+    const script = document.createElement("script");
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_KEY}&libraries=services,clusterer&autoload=false`;
+    script.async = true;
+    script.onload = () => {
+      window.dispatchEvent(new Event("kakao-sdk-loaded"));
+    };
+    script.onerror = (e) => {
+      console.error("[KakaoScript] Failed to load Kakao Maps SDK", e);
+      window.dispatchEvent(new Event("kakao-sdk-error"));
+    };
+    document.head.appendChild(script);
+  }, []);
+
+  return null;
 }
