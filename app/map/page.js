@@ -117,74 +117,67 @@ function PlacePopup({ place, onClose }) {
       )}
 
       {/* 리뷰어 아바타 */}
-      <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
-        {place.reviews.map((r, i) => {
-          const isRightSide = i >= place.reviews.length - 2;
-          return (
-          <div
-            key={i}
-            style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
-            onMouseEnter={() => setHoveredIndex(i)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            <AnimatePresence mode="popLayout">
-              {hoveredIndex === i && (
-                <motion.div
-                  initial={{ opacity: 0, y: 20, scale: 0.6 }}
-                  animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 10 } }}
-                  exit={{ opacity: 0, y: 20, scale: 0.6 }}
-                  transformTemplate={isRightSide ? undefined : (_, generated) => `translateX(-50%) ${generated}`}
-                  style={{
-                    translateX: isRightSide ? 0 : translateX,
-                    rotate,
-                    whiteSpace: "normal",
-                    maxWidth: "min(200px, 60vw)",
-                    wordBreak: "keep-all",
-                    position: "absolute",
-                    bottom: "calc(100% + 8px)",
-                    ...(isRightSide ? { right: 0 } : { left: "50%" }),
-                    background: "var(--text)",
-                    color: "#fff",
-                    borderRadius: 8,
-                    padding: "6px 10px",
-                    zIndex: 50,
-                    pointerEvents: "none",
-                  }}
-                >
-                  <div style={{ fontWeight: 700, fontSize: 13 }}>{r.users?.nickname}</div>
-                  {r.rating && (
-                    <div style={{ fontSize: 11, opacity: 0.8 }}>
-                      {"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}
-                      {r.comment && ` · ${r.comment}`}
-                    </div>
-                  )}
-                </motion.div>
-              )}
-            </AnimatePresence>
+      <div style={{ marginBottom: hoveredIndex !== null ? 8 : 14 }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+          {place.reviews.map((r, i) => (
             <div
-              onMouseMove={handleMouseMove}
+              key={i}
+              style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              onTouchStart={() => setHoveredIndex(i === hoveredIndex ? null : i)}
+            >
+              <div
+                style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  background: getAvatarColor(r.users?.id || String(i)),
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: 15, fontWeight: 700, color: "#fff",
+                  border: "2px solid var(--card-bg)",
+                  cursor: "pointer",
+                  transition: "transform 0.2s",
+                  transform: hoveredIndex === i ? "scale(1.1)" : "scale(1)",
+                }}
+              >
+                {(r.users?.nickname || "?").slice(-2)}
+              </div>
+            </div>
+          ))}
+          <span style={{
+            marginLeft: Math.max(20, place.reviews.length * 4),
+            fontSize: 13, color: "var(--text-sub)", fontWeight: 700,
+          }}>
+            {place.count}명 추천
+          </span>
+        </div>
+        <AnimatePresence mode="wait">
+          {hoveredIndex !== null && place.reviews[hoveredIndex] && (
+            <motion.div
+              key={hoveredIndex}
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.15 }}
               style={{
-                width: 40, height: 40, borderRadius: "50%",
-                background: getAvatarColor(r.users?.id || String(i)),
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: 15, fontWeight: 700, color: "#fff",
-                border: "2px solid var(--card-bg)",
-                cursor: "pointer",
-                transition: "transform 0.2s",
-                transform: hoveredIndex === i ? "scale(1.1)" : "scale(1)",
+                background: "var(--text)",
+                color: "#fff",
+                borderRadius: 8,
+                padding: "6px 10px",
+                fontSize: 12,
+                marginLeft: 4,
+                marginBottom: 6,
               }}
             >
-              {(r.users?.nickname || "?").slice(-2)}
-            </div>
-          </div>
-          );
-        })}
-        <span style={{
-          marginLeft: Math.max(20, place.reviews.length * 4),
-          fontSize: 13, color: "var(--text-sub)", fontWeight: 700,
-        }}>
-          {place.count}명 추천
-        </span>
+              <span style={{ fontWeight: 700 }}>{place.reviews[hoveredIndex].users?.nickname}</span>
+              {place.reviews[hoveredIndex].rating && (
+                <span style={{ opacity: 0.8, marginLeft: 6 }}>
+                  {"★".repeat(place.reviews[hoveredIndex].rating)}{"☆".repeat(5 - place.reviews[hoveredIndex].rating)}
+                  {place.reviews[hoveredIndex].comment && ` · ${place.reviews[hoveredIndex].comment}`}
+                </span>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* 카카오맵 링크 */}
