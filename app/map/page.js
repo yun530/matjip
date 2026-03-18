@@ -118,7 +118,9 @@ function PlacePopup({ place, onClose }) {
 
       {/* 리뷰어 아바타 */}
       <div style={{ display: "flex", alignItems: "center", marginBottom: 14 }}>
-        {place.reviews.map((r, i) => (
+        {place.reviews.map((r, i) => {
+          const isRightSide = i >= place.reviews.length - 2;
+          return (
           <div
             key={i}
             style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
@@ -131,13 +133,16 @@ function PlacePopup({ place, onClose }) {
                   initial={{ opacity: 0, y: 20, scale: 0.6 }}
                   animate={{ opacity: 1, y: 0, scale: 1, transition: { type: "spring", stiffness: 260, damping: 10 } }}
                   exit={{ opacity: 0, y: 20, scale: 0.6 }}
+                  transformTemplate={isRightSide ? undefined : (_, generated) => `translateX(-50%) ${generated}`}
                   style={{
-                    translateX,
+                    translateX: isRightSide ? 0 : translateX,
                     rotate,
-                    whiteSpace: "nowrap",
+                    whiteSpace: "normal",
+                    maxWidth: "min(200px, 60vw)",
+                    wordBreak: "keep-all",
                     position: "absolute",
                     bottom: "calc(100% + 8px)",
-                    left: "50%",
+                    ...(isRightSide ? { right: 0 } : { left: "50%" }),
                     background: "var(--text)",
                     color: "#fff",
                     borderRadius: 8,
@@ -172,7 +177,8 @@ function PlacePopup({ place, onClose }) {
               {(r.users?.nickname || "?").slice(-2)}
             </div>
           </div>
-        ))}
+          );
+        })}
         <span style={{
           marginLeft: Math.max(20, place.reviews.length * 4),
           fontSize: 13, color: "var(--text-sub)", fontWeight: 700,
