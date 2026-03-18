@@ -9,7 +9,7 @@ export default function NicknameSetup() {
   const router = useRouter();
 
   useEffect(() => {
-    if (pathname === "/auth") return;
+    if (pathname === "/auth" || pathname.startsWith("/invite")) return;
     const user = getLocalUser();
     if (!user) {
       router.replace("/auth");
