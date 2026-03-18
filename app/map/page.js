@@ -159,6 +159,7 @@ function PlacePopup({ place, onClose }) {
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.15 }}
               style={{
+                display: "inline-block",
                 background: "var(--text)",
                 color: "#fff",
                 borderRadius: 8,
@@ -166,6 +167,7 @@ function PlacePopup({ place, onClose }) {
                 fontSize: 12,
                 marginLeft: 4,
                 marginBottom: 6,
+                maxWidth: "100%",
               }}
             >
               <span style={{ fontWeight: 700 }}>{place.reviews[hoveredIndex].users?.nickname}</span>
