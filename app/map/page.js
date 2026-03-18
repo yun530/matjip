@@ -123,9 +123,10 @@ function PlacePopup({ place, onClose }) {
             <div
               key={i}
               style={{ marginRight: -12, position: "relative", zIndex: hoveredIndex === i ? 30 : i }}
-              onPointerEnter={(e) => { if (e.pointerType === "mouse") setHoveredIndex(i); }}
-              onPointerLeave={(e) => { if (e.pointerType === "mouse") setHoveredIndex(null); }}
-              onClick={(e) => { e.stopPropagation(); setHoveredIndex((prev) => prev === i ? null : i); }}
+              onTouchStart={(e) => { e.preventDefault(); }}
+              onTouchEnd={(e) => { e.preventDefault(); e.stopPropagation(); setHoveredIndex((prev) => prev === i ? null : i); }}
+              onMouseEnter={() => setHoveredIndex(i)}
+              onMouseLeave={() => setHoveredIndex(null)}
             >
               <div
                 style={{
