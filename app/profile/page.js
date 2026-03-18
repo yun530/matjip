@@ -43,6 +43,12 @@ export default function ProfilePage() {
         setUser(userData);
         const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
         setInviteLink(`${window.location.origin}${base}/invite?code=${userData.invite_code}`);
+      } else {
+        // 저장된 ID가 DB에 없으면 재로그인
+        localStorage.removeItem('zzp_user_id');
+        localStorage.removeItem('zzp_nickname');
+        router.replace('/auth');
+        return;
       }
       setFriends(friendList);
       setMyPlaces(places || []);
